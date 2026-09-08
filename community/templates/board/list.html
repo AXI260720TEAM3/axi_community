@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}{{ board.board_name }} · 모두의국비{% endblock %}
+
+{% comment %} ----------------------------------------------------------------
+   [A] 팀장 담당 화면입니다.
+
+   ** 이 파일은 다른 화면을 만들 때 참고하라고 실제로 동작하게 채워두었습니다. **
+   반복 -> {% for %},  값 -> {{ }},  링크 -> {% url %} 을 어떻게 쓰는지 보세요.
+   뷰는 community/views/board.py 입니다.
+   ---------------------------------------------------------------- {% endcomment %}
+
+{% block content %}
+<div class="head">
+  <div>
+    <div class="crumb">게시판</div>
+    <h1>{{ board.board_name }}</h1>
+  </div>
+  <div>
+    {% if can_write %}
+      <a class="btn" href="{% url 'post_create' board.board_id %}">글쓰기</a>
+    {% else %}
+      <span class="note" style="margin:0">{{ denied_reason }}</span>
+    {% endif %}
+  </div>
+</div>
+
+<form class="filters" method="get">
+  <div class="search">
+    <input name="q" value="{{ keyword }}" placeholder="제목이나 내용으로 검색" aria-label="게시글 검색">
+    <button type="submit">검색</button>
+  </div>
+  <span class="selectish">최신순</span>
+</form>
+
+<table class="list">
+  <thead>
+    <tr>
+      <th class="col-no">번호</th>
+      <th>제목</th>
+      <th class="col-writer">작성자</th>
+      <th class="col-date">작성일</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in page %}
+      <tr>
+        <td class="col-no">{{ p.post_id }}</td>
+        <td class="subject">
+          <a href="{% url 'post_detail' p.post_id %}">{{ p.title }}</a>
+          {% if p.comment_count %}<span class="meta-inline">[{{ p.comment_count }}]</span>{% endif %}
+          {% if p.file_count %}<span class="meta-inline">첨부 {{ p.file_count }}</span>{% endif %}
+        </td>
+        <td class="col-writer">{{ p.writer.member_name }}</td>
+        <td class="col-date">{{ p.created_at|date:"m-d" }}</td>
+      </tr>
+    {% empty %}
+      <tr>
+        <td colspan="4" style="text-align:center;padding:48px 0;color:var(--muted)">
+          {% if keyword %}'{{ keyword }}' 에 해당하는 글이 없습니다.{% else %}아직 등록된 글이 없습니다.{% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if page.paginator.num_pages > 1 %}
+<div class="pager">
+  {% if page.has_previous %}
+    <a class="btn ghost" href="?page={{ page.previous_page_number }}{% if keyword %}&q={{ keyword }}{% endif %}">이전</a>
+  {% endif %}
+
+  {% for n in page.paginator.page_range %}
+    <a href="?page={{ n }}{% if keyword %}&q={{ keyword }}{% endif %}"
+       {% if n == page.number %}aria-current="true"{% endif %}>{{ n }}</a>
+  {% endfor %}
+
+  {% if page.has_next %}
+    <a class="btn ghost" href="?page={{ page.next_page_number }}{% if keyword %}&q={{ keyword }}{% endif %}">다음</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

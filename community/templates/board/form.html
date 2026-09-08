@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}글쓰기 · 모두의국비{% endblock %}
+
+{% comment %} ----------------------------------------------------------------
+   [A] 팀장 담당 화면입니다.
+   목업 HTML 을 그대로 옮겨두었습니다. 지금은 값이 전부 고정되어 있습니다.
+   뷰에서 넘긴 데이터로 바꾸는 것이 여러분의 작업입니다.
+   반복되는 부분은 {% for %} 로, 값은 {{ }} 로 바꾸세요.
+   링크는 반드시 {% url '이름' %} 을 쓰세요. 경로를 직접 적지 마세요.
+   ---------------------------------------------------------------- {% endcomment %}
+
+{% block content %}
+<div class="head">
+  <div>
+    <div class="crumb"><a href="board_list.html#자유게시판">자유게시판</a> · 새 글</div>
+    <h1>글쓰기</h1>
+  </div>
+</div>
+
+<div class="panel pad">
+  <div class="field">
+    <label for="w-board">게시판</label>
+    <select class="control" id="w-board">
+      <option>자유게시판</option>
+      <option>Q&amp;A — 질문</option>
+      <option disabled>공지사항 (직원만 쓸 수 있습니다)</option>
+      <option disabled>취업정보 (직원·강사·멘토만 쓸 수 있습니다)</option>
+    </select>
+  </div>
+  <div class="field">
+    <label for="w-title">제목</label>
+    <input class="control" id="w-title" placeholder="무엇에 대한 글인지 한 줄로 적어주세요">
+  </div>
+  <div class="field">
+    <label for="w-body">내용</label>
+    <textarea class="control" id="w-body" rows="14" placeholder="내용을 입력하세요"></textarea>
+  </div>
+  <div class="field">
+    <label>첨부파일 <span class="hint">여러 개 올릴 수 있습니다</span></label>
+    <div class="dropzone">파일을 끌어다 놓거나 클릭해서 고르세요</div>
+    <div class="attached">
+      <div class="file"><span class="name">알고리즘_스터디_운영안.pdf</span><span class="size">248 KB</span><button class="x" aria-label="첨부 취소">×</button></div>
+      <div class="file"><span class="name">1주차_문제목록.xlsx</span><span class="size">31 KB</span><button class="x" aria-label="첨부 취소">×</button></div>
+    </div>
+  </div>
+  <div class="formfoot">
+    <a class="btn quiet" href="board_list.html#자유게시판">취소</a>
+    <a class="btn" href="board_list.html#자유게시판">등록하기</a>
+  </div>
+</div>
+
+<div class="note">쓸 수 있는 게시판은 회원 유형에 따라 달라집니다. 지금은 수강생 계정이라 공지사항과 취업정보를 고를 수 없습니다.</div>
+{% endblock %}

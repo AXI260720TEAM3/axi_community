@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}쪽지함 · 모두의국비{% endblock %}
+
+{% comment %} ----------------------------------------------------------------
+   [C] 담당 화면입니다.
+   목업 HTML 을 그대로 옮겨두었습니다. 지금은 값이 전부 고정되어 있습니다.
+   뷰에서 넘긴 데이터로 바꾸는 것이 여러분의 작업입니다.
+   반복되는 부분은 {% for %} 로, 값은 {{ }} 로 바꾸세요.
+   링크는 반드시 {% url '이름' %} 을 쓰세요. 경로를 직접 적지 마세요.
+   ---------------------------------------------------------------- {% endcomment %}
+
+{% block content %}
+<div class="head">
+  <div>
+    <div class="crumb">내 활동</div>
+    <h1>쪽지함</h1>
+    <p class="lede">읽지 않은 쪽지 3통이 있습니다.</p>
+  </div>
+</div>
+
+<div class="mail">
+  <div class="panel">
+    <div class="tabs">
+      <button aria-current="true">받은 쪽지</button>
+      <button>보낸 쪽지</button>
+    </div>
+    <div class="mail-item unread">
+      <div class="mail-top"><b>최민재</b><span class="tag answer">멘토</span><time>10:24</time></div>
+      <p>스터디 건은 4층 자습실 예약해두는 게 좋습니다. 데스크에 말하면…</p>
+    </div>
+    <div class="mail-item unread">
+      <div class="mail-top"><b>운영지원팀</b><span class="tag notice">직원</span><time>어제</time></div>
+      <p>출결 정정 요청 확인했습니다. 9월 2일 지각 처리는 취소되었습니다.</p>
+    </div>
+    <div class="mail-item unread">
+      <div class="mail-top"><b>이가온</b><span class="tag">수강생</span><time>어제</time></div>
+      <p>혹시 어제 수업 자료 받으셨나요? 저는 메일이 안 와서요</p>
+    </div>
+    <div class="mail-item">
+      <div class="mail-top"><b>박서준</b><span class="tag">수강생</span><time>9월 3일</time></div>
+      <p>스터디 참여 감사합니다. 단톡방 링크 보내드릴게요</p>
+    </div>
+    <div class="mail-item">
+      <div class="mail-top"><b>정하늘</b><span class="tag">수강생</span><time>9월 1일</time></div>
+      <p>포트폴리오 리뷰 부탁드렸던 건 잘 봤습니다</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="pad">
+      <h2>최민재 님에게 쪽지 보내기</h2>
+      <p class="lede">받는 사람은 게시글이나 댓글의 이름을 눌러 고를 수 있습니다.</p>
+      <div class="field" style="margin-top:18px">
+        <label for="m-to">받는 사람</label>
+        <input class="control readonly" id="m-to" value="최민재 (멘토)" readonly>
+      </div>
+      <div class="field">
+        <label for="m-body">내용</label>
+        <textarea class="control" id="m-body" rows="8" placeholder="쪽지 내용을 입력하세요"></textarea>
+      </div>
+      <div class="formfoot">
+        <button class="btn">쪽지 보내기</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

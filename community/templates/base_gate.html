@@ -1,0 +1,44 @@
+{% load static %}<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}모두의국비{% endblock %}</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'community/css/app.css' %}">
+{% block extra_css %}{% endblock %}
+</head>
+<body>
+
+{% comment %} ================================================================
+   로그인 전 화면(로그인 · 회원가입 · 계정찾기)의 공통 레이아웃입니다.
+   사이드바가 없고 가운데 카드 하나만 있습니다.
+
+   사용법
+       {% extends "base_gate.html" %}
+       {% block card_class %}wide{% endblock %}          카드를 넓게 (회원가입·계정찾기)
+       {% block wordmark %}회원가입<span>부제</span>{% endblock %}
+       {% block content %} ... {% endblock %}
+
+   오류 안내는 뷰에서 messages.error(request, "...") 로 넘기면
+   여기 gate-msg 자리에 자동으로 나옵니다.
+   ================================================================ {% endcomment %}
+
+<div class="gate">
+  <div class="gate-card {% block card_class %}{% endblock %}">
+    <div class="wordmark">{% block wordmark %}모두의국비<span>국비지원 교육과정 정보공유 커뮤니티</span>{% endblock %}</div>
+
+    {% if messages %}
+      {% for m in messages %}<div class="gate-msg">{{ m }}</div>{% endfor %}
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

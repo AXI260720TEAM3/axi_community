@@ -1,0 +1,79 @@
+{% load static %}<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}모두의국비{% endblock %}</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'community/css/app.css' %}">
+{% block extra_css %}{% endblock %}
+</head>
+<body>
+
+{% comment %} ================================================================
+   로그인 후 화면의 공통 레이아웃입니다.
+   사이드바(rail)는 여기서만 관리합니다. 수정이 필요하면 팀장에게 요청하세요.
+
+   사용법
+       {% extends "base.html" %}
+       {% block page_title %}자유게시판{% endblock %}
+       {% block content %} ... {% endblock %}
+
+   사이드바에 필요한 값(nav_boards, unread_count, request.user)은
+   community/context_processors.py 가 모든 페이지에 자동으로 넣어줍니다.
+   각 뷰에서 따로 넘길 필요가 없습니다.
+   ================================================================ {% endcomment %}
+
+<div class="shell">
+
+<aside class="rail">
+  <div class="wordmark">모두의국비<span>국비지원 교육과정 정보공유</span></div>
+
+  <nav>
+    <h4>게시판</h4>
+    {% for b in nav_boards %}
+      {% if b.board_name == 'Q&A' %}
+        <a class="navlink" href="{% url 'qna_list' %}"
+           {% if nav_current == 'qna' %}aria-current="true"{% endif %}>Q&amp;A</a>
+      {% else %}
+        <a class="navlink" href="{% url 'board_list' b.board_id %}"
+           {% if nav_current == b.board_id %}aria-current="true"{% endif %}>{{ b.board_name }}</a>
+      {% endif %}
+    {% endfor %}
+
+    <h4>내 활동</h4>
+    <a class="navlink" href="{% url 'message_box' %}"
+       {% if nav_current == 'message' %}aria-current="true"{% endif %}>쪽지함{% if unread_count %}<span class="cnt">{{ unread_count }}</span>{% endif %}</a>
+    <a class="navlink" href="{% url 'mypage' %}"
+       {% if nav_current == 'mypage' %}aria-current="true"{% endif %}>마이페이지</a>
+  </nav>
+
+  <div class="whoami">
+    {% if user.is_authenticated %}
+      <b>{{ user.member_name }}</b>
+      <small>{{ user.user_type.type_name }}</small>
+      <a href="{% url 'logout' %}">로그아웃</a>
+    {% else %}
+      <b>손님</b>
+      <small>로그인이 필요합니다</small>
+      <a href="{% url 'login' %}">로그인</a>
+    {% endif %}
+  </div>
+</aside>
+
+<main class="stage">
+{% if messages %}
+  {% for m in messages %}<div class="note">{{ m }}</div>{% endfor %}
+{% endif %}
+
+{% block content %}{% endblock %}
+</main>
+
+</div>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -66,6 +66,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                # 사이드바에 게시판 목록과 안 읽은 쪽지 수를 자동으로 넣어줍니다.
+                'community.context_processors.sidebar',
             ],
         },
     },
@@ -131,6 +133,11 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# @login_required 가 걸린 화면에 비로그인 상태로 들어오면 여기로 보냅니다.
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'login'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

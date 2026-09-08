@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }} · 모두의국비{% endblock %}
+
+{% comment %} ----------------------------------------------------------------
+   [A] 팀장 담당 화면입니다. 읽기는 동작하도록 연결해두었습니다.
+
+   남은 작업
+     [A] 수정 · 삭제 버튼을 실제 동작으로 (post_update / post_delete)
+     [A] 첨부파일 다운로드 링크 (attachment_download)
+     [C] 댓글 등록 · 삭제 (comment_create / comment_delete)
+   ---------------------------------------------------------------- {% endcomment %}
+
+{% block content %}
+<div class="head">
+  <div class="crumb"><a href="{% url 'board_list' post.board_id %}">{{ post.board.board_name }}</a> · 게시글</div>
+  <a class="btn quiet" href="{% url 'board_list' post.board_id %}">목록으로</a>
+</div>
+
+<article class="panel">
+  <div class="post-head">
+    <h1>{{ post.title }}</h1>
+    <div class="post-meta">
+      <span>{{ post.writer.member_name }} · {{ post.writer.user_type.type_name }}</span>
+      <span>{{ post.created_at|date:"Y년 n월 j일 H:i" }}</span>
+      {% if post.updated_at %}<span>수정됨</span>{% endif %}
+      {% if attachments %}<span>첨부 {{ attachments|length }}</span>{% endif %}
+    </div>
+  </div>
+
+  <div class="post-body">
+    {{ post.content|linebreaks }}
+  </div>
+
+  {% if attachments %}
+  <div class="files">
+    <h5>첨부파일</h5>
+    {% for a in attachments %}
+      {# TODO [A] href 를 {% url 'attachment_download' a.attachment_id %} 로 바꾸세요 #}
+      <div class="file">
+        <span class="name">{{ a.origin_name }}</span>
+        <span class="size">{{ a.file_size|filesizeformat }}</span>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="post-foot">
+    {% if user.is_authenticated and not is_owner %}
+      <a class="btn quiet sm" href="{% url 'message_box' %}">쪽지 보내기</a>
+    {% endif %}
+    {% if is_owner %}
+      <div class="right">
+        <a class="btn quiet sm" href="{% url 'post_update' post.post_id %}">수정</a>
+        <a class="btn quiet sm" href="{% url 'post_delete' post.post_id %}">삭제</a>
+      </div>
+    {% endif %}
+  </div>
+</article>
+
+{% if post.board.allow_comment %}
+<div class="panel">
+  <div class="cmt-head">댓글 {{ comments|length }}</div>
+
+  {% for c in comments %}
+    <div class="cmt">
+      <div class="cmt-top">
+        <b>{{ c.writer.member_name }}</b>
+        <span class="tag">{{ c.writer.user_type.type_name }}</span>
+        <time>{{ c.created_at|date:"n월 j일 H:i" }}</time>
+        {% if c.writer_id == user.member_id %}
+          <span class="acts">
+            {# TODO [C] 삭제를 {% url 'comment_delete' c.comment_id %} 로 연결 #}
+            <button type="button">삭제</button>
+          </span>
+        {% endif %}
+      </div>
+      <p>{{ c.content|linebreaksbr }}</p>
+    </div>
+  {% empty %}
+    <div class="cmt gone"><p>아직 댓글이 없습니다.</p></div>
+  {% endfor %}
+
+  {% if user.is_authenticated %}
+    {# TODO [C] comment_create 뷰를 채우면 이 폼이 동작합니다 #}
+    <form class="cmt-write" method="post" action="{% url 'comment_create' post.post_id %}">
+      {% csrf_token %}
+      <textarea name="content" rows="3" placeholder="댓글을 입력하세요" maxlength="1000"></textarea>
+      <div class="row">
+        <span class="counter">0 / 1000</span>
+        <button class="btn sm" type="submit">댓글 등록</button>
+      </div>
+    </form>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base_gate.html" %}
+{% block title %}회원가입 · 모두의국비{% endblock %}
+{% block card_class %}wide{% endblock %}
+{% block wordmark %}회원가입<span>모두의국비를 함께 씁니다</span>{% endblock %}
+
+{% comment %} ----------------------------------------------------------------
+   [B] 담당 화면입니다.
+   목업 HTML 을 그대로 옮겨두었습니다. 지금은 값이 전부 고정되어 있습니다.
+   뷰에서 넘긴 데이터로 바꾸는 것이 여러분의 작업입니다.
+   form 은 method="post" 와 {% csrf_token %} 이 반드시 필요합니다.
+   링크는 반드시 {% url '이름' %} 을 쓰세요. 경로를 직접 적지 마세요.
+   ---------------------------------------------------------------- {% endcomment %}
+
+{% block content %}
+<div class="field">
+      <label for="su-id">아이디</label>
+      <input class="control" id="su-id" value="mentee_kim">
+      <div class="ok">쓸 수 있는 아이디입니다.</div>
+    </div>
+    <div class="field bad">
+      <label for="su-pw">비밀번호 <span class="hint">영문과 숫자를 섞어 8자 이상</span></label>
+      <input class="control" id="su-pw" type="password" value="·····">
+      <div class="err">8자 이상으로 다시 입력해 주세요.</div>
+    </div>
+    <div class="field">
+      <label for="su-pw2">비밀번호 확인</label>
+      <input class="control" id="su-pw2" type="password">
+    </div>
+    <div class="two">
+      <div class="field">
+        <label for="su-name">이름</label>
+        <input class="control" id="su-name" value="김수강">
+      </div>
+      <div class="field">
+        <label for="su-phone">전화번호 <span class="hint">- 없이</span></label>
+        <input class="control" id="su-phone" value="01012345678">
+      </div>
+    </div>
+    <div class="field">
+      <label for="su-mail">이메일</label>
+      <input class="control" id="su-mail" type="email" value="kim@example.com">
+    </div>
+    <div class="field">
+      <label for="su-addr">주소</label>
+      <input class="control" id="su-addr" value="경기도 성남시 중원구">
+    </div>
+    <div class="field">
+      <label>회원 유형</label>
+      <div class="radios">
+        <label><input type="radio" name="utype" checked><span>수강생</span></label>
+        <label><input type="radio" name="utype"><span>멘토</span></label>
+        <label><input type="radio" name="utype"><span>강사</span></label>
+        <label><input type="radio" name="utype"><span>직원</span></label>
+      </div>
+      <div class="note">가입 후 유형 변경은 운영자만 할 수 있습니다. 강사·직원으로 가입하면 확인 절차를 거칩니다.</div>
+    </div>
+    <a class="btn" href="login.html">가입하기</a>
+    <div class="gate-links"><a href="login.html">이미 계정이 있어요</a></div>
+{% endblock %}

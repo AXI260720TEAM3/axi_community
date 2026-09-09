@@ -6,9 +6,9 @@ post_detail 은 목록에서 제목을 눌렀을 때 화면이 뜨도록 읽기 
 """
 
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 
-from ..models import Attachment, Post
+from ..models import Attachment, Post, Board
 from ..permissions import is_owner
 
 
@@ -31,10 +31,21 @@ def post_detail(request, post_id):
 
 @login_required
 def post_create(request, board_id):
+    board = get_object_or_404(Board, pk=board_id)
+    if request.method == "POST":
+        # print(request.POST)
+        post = Post.objects.create(
+            board=board,
+            writer=request.user,
+            title=request.POST["title"],
+            content=request.POST["content"],
+        )
+        return redirect("post_detail",post_id=post.post_id)
+    return render(request, "board/form.html",{"board": board})
     # TODO [A] 작성 권한 확인(permissions.can_write) → 폼 검증 → 저장 → 첨부파일 처리
     #          첨부파일은 request.FILES.getlist('files') 로 여러 개를 받습니다.
     #          form 태그에 enctype="multipart/form-data" 가 없으면 파일이 안 넘어옵니다.
-    raise NotImplementedError("post_create — [A] 팀장 담당")
+    # raise NotImplementedError("post_create — [A] 팀장 담당")
 
 
 @login_required

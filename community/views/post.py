@@ -56,8 +56,20 @@ def post_update(request, post_id):
 
 @login_required
 def post_delete(request, post_id):
+    post = get_object_or_404(Post, pk=post_id, is_deleted=False)
+
+    if not is_owner(request.user, post):
+        return redirect("post_detail", post_id=post.post_id)
+
+    if request.method == "POST":
+        post.is_deleted = True
+        post.save()
+        return redirect("board_list", board_id=post.board_id)
+    
+    return redirect("post_detail", post_id=post.post_id)
+
     # TODO [A] 실제로 지우지 말고 is_deleted = True 로 표시(삭제 플래그)
-    raise NotImplementedError("post_delete — [A] 팀장 담당")
+    # raise NotImplementedError("post_delete — [A] 팀장 담당")
 
 
 def attachment_download(request, attachment_id):

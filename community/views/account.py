@@ -34,6 +34,7 @@ def login_view(request):
             
     # 템플릿 경로를 'account/login.html'로 수정
     return render(request, 'account/login.html')
+# test용
 
 
 def logout_view(request):

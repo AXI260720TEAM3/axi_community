@@ -51,7 +51,10 @@
     {% if is_owner %}
       <div class="right">
         <a class="btn quiet sm" href="{% url 'post_update' post.post_id %}">수정</a>
-        <a class="btn quiet sm" href="{% url 'post_delete' post.post_id %}">삭제</a>
+        <form method="post" action="{% url 'post_delete' post.post_id %}" style="display:inline">
+          {% csrf_token %}
+          <button type="submit" class="btn quiet sm">삭제</button>
+        </form>
       </div>
     {% endif %}
   </div>

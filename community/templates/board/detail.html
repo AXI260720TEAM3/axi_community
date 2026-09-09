@@ -57,40 +57,6 @@
   </div>
 </article>
 
-{% if post.board.allow_comment %}
-<div class="panel">
-  <div class="cmt-head">댓글 {{ comments|length }}</div>
-
-  {% for c in comments %}
-    <div class="cmt">
-      <div class="cmt-top">
-        <b>{{ c.writer.member_name }}</b>
-        <span class="tag">{{ c.writer.user_type.type_name }}</span>
-        <time>{{ c.created_at|date:"n월 j일 H:i" }}</time>
-        {% if c.writer_id == user.member_id %}
-          <span class="acts">
-            {# TODO [C] 삭제를 {% url 'comment_delete' c.comment_id %} 로 연결 #}
-            <button type="button">삭제</button>
-          </span>
-        {% endif %}
-      </div>
-      <p>{{ c.content|linebreaksbr }}</p>
-    </div>
-  {% empty %}
-    <div class="cmt gone"><p>아직 댓글이 없습니다.</p></div>
-  {% endfor %}
-
-  {% if user.is_authenticated %}
-    {# TODO [C] comment_create 뷰를 채우면 이 폼이 동작합니다 #}
-    <form class="cmt-write" method="post" action="{% url 'comment_create' post.post_id %}">
-      {% csrf_token %}
-      <textarea name="content" rows="3" placeholder="댓글을 입력하세요" maxlength="1000"></textarea>
-      <div class="row">
-        <span class="counter">0 / 1000</span>
-        <button class="btn sm" type="submit">댓글 등록</button>
-      </div>
-    </form>
-  {% endif %}
-</div>
-{% endif %}
+{# 댓글 영역은 [C] 담당입니다. board/_comments.html 을 고치세요. #}
+{% include "board/_comments.html" %}
 {% endblock %}

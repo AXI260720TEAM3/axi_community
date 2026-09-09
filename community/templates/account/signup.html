@@ -3,57 +3,173 @@
 {% block card_class %}wide{% endblock %}
 {% block wordmark %}회원가입<span>모두의국비를 함께 씁니다</span>{% endblock %}
 
-{% comment %} ----------------------------------------------------------------
-   [B] 담당 화면입니다.
-   목업 HTML 을 그대로 옮겨두었습니다. 지금은 값이 전부 고정되어 있습니다.
-   뷰에서 넘긴 데이터로 바꾸는 것이 여러분의 작업입니다.
-   form 은 method="post" 와 {% csrf_token %} 이 반드시 필요합니다.
-   링크는 반드시 {% url '이름' %} 을 쓰세요. 경로를 직접 적지 마세요.
-   ---------------------------------------------------------------- {% endcomment %}
-
 {% block content %}
-<div class="field">
-      <label for="su-id">아이디</label>
-      <input class="control" id="su-id" value="mentee_kim">
-      <div class="ok">쓸 수 있는 아이디입니다.</div>
+{% if messages %}
+  {% for message in messages %}
+    <script>alert("{{ message }}");</script>
+  {% endfor %}
+{% endif %}
+
+<form id="signup-form" method="post" action="{% url 'signup' %}">
+  {% csrf_token %}
+
+  <!-- 아이디 -->
+  <div class="field" id="field-username">
+    <label for="su-id">아이디</label>
+    <input class="control" id="su-id" name="username" value="{{ form.username.value|default:'' }}" required>
+    <div class="err" style="display:none;"></div>
+  </div>
+
+  <!-- 비밀번호 -->
+  <div class="field" id="field-password">
+    <label for="su-pw">비밀번호 <span class="hint">영문과 숫자를 섞어 8자 이상</span></label>
+    <input class="control" id="su-pw" type="password" name="password" required>
+    <div class="err" style="display:none;"></div>
+  </div>
+
+  <!-- 비밀번호 확인 -->
+  <div class="field" id="field-password-confirm">
+    <label for="su-pw2">비밀번호 확인</label>
+    <input class="control" id="su-pw2" type="password" name="password_confirm" required>
+    <div class="err" style="display:none;"></div>
+  </div>
+
+  <div class="two">
+    <!-- 이름 -->
+    <div class="field" id="field-member-name">
+      <label for="su-name">이름</label>
+      <input class="control" id="su-name" name="member_name" value="{{ form.member_name.value|default:'' }}" required>
+      <div class="err" style="display:none;"></div>
     </div>
-    <div class="field bad">
-      <label for="su-pw">비밀번호 <span class="hint">영문과 숫자를 섞어 8자 이상</span></label>
-      <input class="control" id="su-pw" type="password" value="·····">
-      <div class="err">8자 이상으로 다시 입력해 주세요.</div>
+
+    <!-- 전화번호 -->
+    <div class="field" id="field-phone">
+      <label for="su-phone">전화번호 <span class="hint">- 없이</span></label>
+      <input class="control" id="su-phone" name="phone" value="{{ form.phone.value|default:'' }}" placeholder="01012345678" required>
+      <div class="err" style="display:none;"></div>
     </div>
-    <div class="field">
-      <label for="su-pw2">비밀번호 확인</label>
-      <input class="control" id="su-pw2" type="password">
+  </div>
+
+  <!-- 이메일 -->
+  <div class="field" id="field-email">
+    <label for="su-mail">이메일</label>
+    <input class="control" id="su-mail" type="email" name="email" value="{{ form.email.value|default:'' }}" required>
+    <div class="err" style="display:none;"></div>
+  </div>
+
+  <!-- 주소 -->
+  <div class="field" id="field-address">
+    <label for="su-addr">주소</label>
+    <input class="control" id="su-addr" name="address" value="{{ form.address.value|default:'' }}" required>
+    <div class="err" style="display:none;"></div>
+  </div>
+
+  <!-- 회원 유형 -->
+  <div class="field">
+    <label>회원 유형</label>
+    <div class="radios">
+      <label><input type="radio" name="user_type_name" value="수강생" checked><span>수강생</span></label>
+      <label><input type="radio" name="user_type_name" value="멘토"><span>멘토</span></label>
+      <label><input type="radio" name="user_type_name" value="강사"><span>강사</span></label>
+      <label><input type="radio" name="user_type_name" value="직원"><span>직원</span></label>
     </div>
-    <div class="two">
-      <div class="field">
-        <label for="su-name">이름</label>
-        <input class="control" id="su-name" value="김수강">
-      </div>
-      <div class="field">
-        <label for="su-phone">전화번호 <span class="hint">- 없이</span></label>
-        <input class="control" id="su-phone" value="01012345678">
-      </div>
-    </div>
-    <div class="field">
-      <label for="su-mail">이메일</label>
-      <input class="control" id="su-mail" type="email" value="kim@example.com">
-    </div>
-    <div class="field">
-      <label for="su-addr">주소</label>
-      <input class="control" id="su-addr" value="경기도 성남시 중원구">
-    </div>
-    <div class="field">
-      <label>회원 유형</label>
-      <div class="radios">
-        <label><input type="radio" name="utype" checked><span>수강생</span></label>
-        <label><input type="radio" name="utype"><span>멘토</span></label>
-        <label><input type="radio" name="utype"><span>강사</span></label>
-        <label><input type="radio" name="utype"><span>직원</span></label>
-      </div>
-      <div class="note">가입 후 유형 변경은 운영자만 할 수 있습니다. 강사·직원으로 가입하면 확인 절차를 거칩니다.</div>
-    </div>
-    <a class="btn" href="login.html">가입하기</a>
-    <div class="gate-links"><a href="login.html">이미 계정이 있어요</a></div>
+    <div class="note">가입 후 유형 변경은 운영자만 할 수 있습니다. 강사·직원으로 가입하면 확인 절차를 거칩니다.</div>
+  </div>
+
+  <button type="submit" class="btn" style="width: 100%; border: none; cursor: pointer;">가입하기</button>
+</form>
+
+<div class="gate-links"><a href="{% url 'login' %}">이미 계정이 있어요</a></div>
+
+<!-- 실시간 유효성 검사 자바스크립트 -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const usernameInput = document.getElementById('su-id');
+  const passwordInput = document.getElementById('su-pw');
+  const passwordConfirmInput = document.getElementById('su-pw2');
+  const phoneInput = document.getElementById('su-phone');
+
+  // 에러 메시지 표시 함수
+  function showError(input, message) {
+    const field = input.closest('.field');
+    let errDiv = field.querySelector('.err');
+    if (!errDiv) {
+      errDiv = document.createElement('div');
+      errDiv.className = 'err';
+      field.appendChild(errDiv);
+    }
+    field.classList.add('bad');
+    errDiv.textContent = message;
+    errDiv.style.display = 'block';
+  }
+
+  // 에러 메시지 제거 함수
+  function clearError(input) {
+    const field = input.closest('.field');
+    const errDiv = field.querySelector('.err');
+    field.classList.remove('bad');
+    if (errDiv) {
+      errDiv.textContent = '';
+      errDiv.style.display = 'none';
+    }
+  }
+
+  // 1. 비밀번호 실시간 검증 (8자 이상)
+  function validatePassword() {
+    const val = passwordInput.value;
+    if (val.length > 0 && val.length < 8) {
+      showError(passwordInput, '비밀번호는 8자 이상이어야 합니다.');
+      return false;
+    } else {
+      clearError(passwordInput);
+      return true;
+    }
+  }
+
+  // 2. 비밀번호 확인 일치 실시간 검증
+  function validatePasswordConfirm() {
+    const pw = passwordInput.value;
+    const pwConfirm = passwordConfirmInput.value;
+    if (pwConfirm.length > 0 && pw !== pwConfirm) {
+      showError(passwordConfirmInput, '비밀번호가 일치하지 않습니다.');
+      return false;
+    } else {
+      clearError(passwordConfirmInput);
+      return true;
+    }
+  }
+
+  // 3. 전화번호 실시간 검증 (숫자만 10~11자)
+  function validatePhone() {
+    const val = phoneInput.value;
+    const phoneRegex = /^\d{10,11}$/;
+    if (val.length > 0 && !phoneRegex.test(val)) {
+      showError(phoneInput, '하이픈(-) 없이 숫자 10자리 또는 11자리를 입력하세요.');
+      return false;
+    } else {
+      clearError(phoneInput);
+      return true;
+    }
+  }
+
+  // 이벤트 리스너 등록 (입력할 때 + 포커스 벗어날 때)
+  passwordInput.addEventListener('input', validatePassword);
+  passwordInput.addEventListener('input', validatePasswordConfirm);
+  passwordConfirmInput.addEventListener('input', validatePasswordConfirm);
+  phoneInput.addEventListener('input', validatePhone);
+
+  // 폼 제출 전 전체 검사
+  document.getElementById('signup-form').addEventListener('submit', function(e) {
+    let isValid = true;
+
+    if (!validatePassword()) isValid = false;
+    if (!validatePasswordConfirm()) isValid = false;
+    if (!validatePhone()) isValid = false;
+
+    if (!isValid) {
+      e.preventDefault(); // 조건 미충족 시 제출 막음
+    }
+  });
+});
+</script>
 {% endblock %}

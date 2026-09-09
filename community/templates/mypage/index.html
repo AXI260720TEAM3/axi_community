@@ -3,10 +3,9 @@
 
 {% comment %} ----------------------------------------------------------------
    [B] 담당 화면입니다.
-   목업 HTML 을 그대로 옮겨두었습니다. 지금은 값이 전부 고정되어 있습니다.
-   뷰에서 넘긴 데이터로 바꾸는 것이 여러분의 작업입니다.
-   반복되는 부분은 {% for %} 로, 값은 {{ }} 로 바꾸세요.
-   링크는 반드시 {% url '이름' %} 을 쓰세요. 경로를 직접 적지 마세요.
+   - 동적 통계(자유게시판, Q&A, 댓글, 쪽지) 연동
+   - 회원정보 일괄 수정 Form (이메일, 비밀번호, 전화번호, 주소) 연동
+   - 내가 쓴 글 목록 동적 출력
    ---------------------------------------------------------------- {% endcomment %}
 
 {% block content %}
@@ -17,36 +16,68 @@
   </div>
 </div>
 
+<!-- 상단 카운터 통계 영역 -->
 <div class="stats">
-  <div class="stat"><b>12</b><span>자유게시판 글</span></div>
-  <div class="stat"><b>5</b><span>Q&amp;A 질문</span></div>
-  <div class="stat"><b>31</b><span>댓글</span></div>
-  <div class="stat"><b>3</b><span>안 읽은 쪽지</span></div>
+  <div class="stat"><b>{{ free_post_count }}</b><span>자유게시판 글</span></div>
+  <div class="stat"><b>{{ qna_count }}</b><span>Q&amp;A 질문</span></div>
+  <div class="stat"><b>{{ comment_count }}</b><span>댓글</span></div>
+  <div class="stat"><b>{{ unread_message_count }}</b><span>안 읽은 쪽지</span></div>
 </div>
 
-<div class="panel pad" style="margin-top:18px">
-  <h2>회원정보 수정</h2>
-  <p class="lede">아이디, 이름, 회원 유형은 바꿀 수 없습니다.</p>
-  <div class="two" style="margin-top:18px">
-    <div class="field"><label for="my-id">아이디</label><input class="control readonly" id="my-id" value="mentee_kim" readonly></div>
-    <div class="field"><label for="my-name">이름</label><input class="control readonly" id="my-name" value="김수강" readonly></div>
+<!-- 회원정보 수정 영역 -->
+<form method="post" action="{% url 'profile_edit' %}">
+  {% csrf_token %}
+  <div class="panel pad" style="margin-top:18px">
+    <h2>회원정보 수정</h2>
+    <p class="lede">아이디, 이름, 회원 유형은 바꿀 수 없습니다.</p>
+    
+    <div class="two" style="margin-top:18px">
+      <div class="field">
+        <label for="my-id">아이디</label>
+        <input class="control readonly" id="my-id" value="{{ user.username }}" readonly>
+      </div>    
+      <div class="field">
+        <label for="my-name">이름</label>
+        <input class="control readonly" id="my-name" value="{{ user.member_name }}" readonly>
+      </div>
+      <div class="field">
+        <label for="my-type">회원 유형</label>
+        <input class="control readonly" id="my-type" value="{{ user.user_type.type_name }}" readonly>
+      </div>
+      <div class="field">
+        <label for="my-mail">이메일</label>
+        <input class="control" id="my-mail" type="email" name="email" value="{{ user.email }}" required>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label for="my-pw">새 비밀번호</label>
+          <input class="control" id="my-pw" type="password" name="new_password" placeholder="바꾸지 않으려면 비워두세요">
+        </div>
+        <div class="field">
+          <label for="my-pw2">새 비밀번호 확인</label>
+          <input class="control" id="my-pw2" type="password" name="new_password_confirm">
+        </div>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label for="my-phone">전화번호</label>
+          <input class="control" id="my-phone" type="text" name="phone" value="{{ user.phone|default:'' }}">
+        </div>
+        <div class="field">
+          <label for="my-addr">주소</label>
+          <input class="control" id="my-addr" type="text" name="address" value="{{ user.address|default:'' }}">
+        </div>
+      </div>
+      
+      <div class="formfoot">
+        <button type="reset" class="btn quiet">되돌리기</button>
+        <button type="submit" class="btn">저장하기</button>
+      </div>
+    </div>
   </div>
-  <div class="field"><label for="my-type">회원 유형</label><input class="control readonly" id="my-type" value="수강생" readonly></div>
-  <div class="field"><label for="my-mail">이메일</label><input class="control" id="my-mail" type="email" value="kim@example.com"></div>
-  <div class="two">
-    <div class="field"><label for="my-pw">새 비밀번호</label><input class="control" id="my-pw" type="password" placeholder="바꾸지 않으려면 비워두세요"></div>
-    <div class="field"><label for="my-pw2">새 비밀번호 확인</label><input class="control" id="my-pw2" type="password"></div>
-  </div>
-  <div class="two">
-    <div class="field"><label for="my-phone">전화번호</label><input class="control" id="my-phone" value="01012345678"></div>
-    <div class="field"><label for="my-addr">주소</label><input class="control" id="my-addr" value="경기도 성남시 중원구"></div>
-  </div>
-  <div class="formfoot">
-    <button class="btn quiet">되돌리기</button>
-    <button class="btn">저장하기</button>
-  </div>
-</div>
+</form>
 
+<!-- 내가 쓴 글 목록 영역 -->
 <div class="panel pad">
   <h2>내가 쓴 글</h2>
   <div class="tabs" style="margin-top:14px" id="mytabs">
@@ -56,18 +87,26 @@
     <button>공지사항</button>
   </div>
 
-  <table class="list" style="margin-top:16px;border:0" id="mylist">
-    <tbody>
-      <tr><td class="subject"><a href="post_detail.html">3층 프린터 쓰는 법 (종이 넣는 위치가 헷갈립니다)</a><span class="meta-inline">[6]</span></td><td class="col-date">09-02</td></tr>
-      <tr><td class="subject"><a href="post_detail.html">스터디 자료 정리해서 올립니다</a><span class="meta-inline">[3]</span></td><td class="col-date">08-27</td></tr>
-      <tr><td class="subject"><a href="post_detail.html">과정 초반에 알았으면 좋았을 것들</a><span class="meta-inline">[15]</span></td><td class="col-date">08-19</td></tr>
-    </tbody>
-  </table>
-
-  <div class="empty" id="myempty" style="display:none">
-    <b>아직 이 게시판에 쓴 글이 없습니다</b>
-    궁금한 게 생기면 언제든 물어보세요.
-    <div><a class="btn" href="post_form.html">글쓰기</a></div>
-  </div>
+  {% if my_posts %}
+    <table class="list" style="margin-top:16px;border:0" id="mylist">
+      <tbody>
+        {% for post in my_posts %}
+          <tr>
+            <td class="subject">
+              <a href="{% url 'post_detail' post.id %}">{{ post.title }}</a>
+              <span class="meta-inline">[{{ post.comments.count|default:0 }}]</span>
+            </td>
+            <td class="col-date">{{ post.created_at|date:"m-d" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="empty" id="myempty">
+      <b>아직 이 게시판에 쓴 글이 없습니다</b>
+      궁금한 게 생기면 언제든 물어보세요.
+      <div style="margin-top:12px;"><a class="btn" href="{% url 'post_create' %}">글쓰기</a></div>
+    </div>
+  {% endif %}
 </div>
 {% endblock %}

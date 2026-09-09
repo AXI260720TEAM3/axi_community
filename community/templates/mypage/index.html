@@ -31,6 +31,7 @@
     <h2>회원정보 수정</h2>
     <p class="lede">아이디, 이름, 회원 유형은 바꿀 수 없습니다.</p>
     
+    <!-- 1행: 아이디 / 이름 -->
     <div class="two" style="margin-top:18px">
       <div class="field">
         <label for="my-id">아이디</label>
@@ -40,6 +41,10 @@
         <label for="my-name">이름</label>
         <input class="control readonly" id="my-name" value="{{ user.member_name }}" readonly>
       </div>
+    </div>
+
+    <!-- 2행: 회원 유형 / 이메일 -->
+    <div class="two">
       <div class="field">
         <label for="my-type">회원 유형</label>
         <input class="control readonly" id="my-type" value="{{ user.user_type.type_name }}" readonly>
@@ -48,31 +53,35 @@
         <label for="my-mail">이메일</label>
         <input class="control" id="my-mail" type="email" name="email" value="{{ user.email }}" required>
       </div>
-      <div class="two">
-        <div class="field">
-          <label for="my-pw">새 비밀번호</label>
-          <input class="control" id="my-pw" type="password" name="new_password" placeholder="바꾸지 않으려면 비워두세요">
-        </div>
-        <div class="field">
-          <label for="my-pw2">새 비밀번호 확인</label>
-          <input class="control" id="my-pw2" type="password" name="new_password_confirm">
-        </div>
+    </div>
+
+    <!-- 3행: 새 비밀번호 / 새 비밀번호 확인 -->
+    <div class="two">
+      <div class="field">
+        <label for="my-pw">새 비밀번호</label>
+        <input class="control" id="my-pw" type="password" name="new_password" placeholder="바꾸지 않으려면 비워두세요">
       </div>
-      <div class="two">
-        <div class="field">
-          <label for="my-phone">전화번호</label>
-          <input class="control" id="my-phone" type="text" name="phone" value="{{ user.phone|default:'' }}">
-        </div>
-        <div class="field">
-          <label for="my-addr">주소</label>
-          <input class="control" id="my-addr" type="text" name="address" value="{{ user.address|default:'' }}">
-        </div>
+      <div class="field">
+        <label for="my-pw2">새 비밀번호 확인</label>
+        <input class="control" id="my-pw2" type="password" name="new_password_confirm">
       </div>
+    </div>
+
+    <!-- 4행: 전화번호 / 주소 -->
+    <div class="two">
+      <div class="field">
+        <label for="my-phone">전화번호</label>
+        <input class="control" id="my-phone" type="text" name="phone" value="{{ user.phone|default:'' }}">
+      </div>
+      <div class="field">
+        <label for="my-addr">주소</label>
+        <input class="control" id="my-addr" type="text" name="address" value="{{ user.address|default:'' }}">
+      </div>
+    </div>
       
-      <div class="formfoot">
-        <button type="reset" class="btn quiet">되돌리기</button>
-        <button type="submit" class="btn">저장하기</button>
-      </div>
+    <div class="formfoot">
+      <button type="reset" class="btn quiet">되돌리기</button>
+      <button type="submit" class="btn">저장하기</button>
     </div>
   </div>
 </form>
@@ -93,7 +102,7 @@
         {% for post in my_posts %}
           <tr>
             <td class="subject">
-              <a href="{% url 'post_detail' post.id %}">{{ post.title }}</a>
+              <a href="{% url 'post_detail' post.pk %}">{{ post.title }}</a>
               <span class="meta-inline">[{{ post.comments.count|default:0 }}]</span>
             </td>
             <td class="col-date">{{ post.created_at|date:"m-d" }}</td>
@@ -105,7 +114,7 @@
     <div class="empty" id="myempty">
       <b>아직 이 게시판에 쓴 글이 없습니다</b>
       궁금한 게 생기면 언제든 물어보세요.
-      <div style="margin-top:12px;"><a class="btn" href="{% url 'post_create' %}">글쓰기</a></div>
+      <div style="margin-top:12px;"><a class="btn" href="{% url 'mypage' %}">글쓰기</a></div>
     </div>
   {% endif %}
 </div>

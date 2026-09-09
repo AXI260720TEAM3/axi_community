@@ -12,28 +12,25 @@
 {% block content %}
 <div class="head">
   <div>
-    <div class="crumb"><a href="board_list.html#자유게시판">자유게시판</a> · 새 글</div>
+    <div class="crumb">
+      <a href="{% url 'board_list' board.board_id %}">{{ board.board_name }}</a> · 새 글</div>
     <h1>글쓰기</h1>
   </div>
 </div>
 
-<div class="panel pad">
+<form class="panel pad" method="post">
+  {% csrf_token %}
   <div class="field">
     <label for="w-board">게시판</label>
-    <select class="control" id="w-board">
-      <option>자유게시판</option>
-      <option>Q&amp;A — 질문</option>
-      <option disabled>공지사항 (직원만 쓸 수 있습니다)</option>
-      <option disabled>취업정보 (직원·강사·멘토만 쓸 수 있습니다)</option>
-    </select>
+    <div class="control" style="background:var(--wash)">{{ board.board_name }}</div>
   </div>
   <div class="field">
     <label for="w-title">제목</label>
-    <input class="control" id="w-title" placeholder="무엇에 대한 글인지 한 줄로 적어주세요">
+    <input class="control" id="w-title" name="title" placeholder="무엇에 대한 글인지 한 줄로 적어주세요">
   </div>
   <div class="field">
     <label for="w-body">내용</label>
-    <textarea class="control" id="w-body" rows="14" placeholder="내용을 입력하세요"></textarea>
+    <textarea class="control" id="w-body" name=content rows="14" placeholder="내용을 입력하세요"></textarea>
   </div>
   <div class="field">
     <label>첨부파일 <span class="hint">여러 개 올릴 수 있습니다</span></label>
@@ -44,10 +41,10 @@
     </div>
   </div>
   <div class="formfoot">
-    <a class="btn quiet" href="board_list.html#자유게시판">취소</a>
-    <a class="btn" href="board_list.html#자유게시판">등록하기</a>
+    <a class="btn quiet" href="{% url 'board_list' board.board_id %}">취소</a>
+    <button class="btn" type="submit">등록하기</button>
   </div>
-</div>
+</form>
 
-<div class="note">쓸 수 있는 게시판은 회원 유형에 따라 달라집니다. 지금은 수강생 계정이라 공지사항과 취업정보를 고를 수 없습니다.</div>
+
 {% endblock %}

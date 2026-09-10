@@ -76,3 +76,25 @@ def profile_edit(request):
         return redirect('mypage')
 
     return render(request, "mypage/index.html", {"nav_current": "mypage"})
+
+
+@login_required
+def my_posts_ajax(request):
+  """내가 쓴 글 탭 클릭 시 AJAX 요청을 처리하는 뷰"""
+  board_name = request.GET.get('board_name', '자유게시판')
+
+  # 1. 로그인한 사용자(request.user)가 쓴 글 중
+  # 2. 선택한 게시판 이름과 일치하고
+  # 3. 삭제되지 않은(is_deleted=False) 글만 조회
+  posts = (
+      Post.objects.filter(
+          writer=request.user, board__board_name=board_name, is_deleted=False
+      )
+      .select_related('board')
+      .order_by('-created_at')
+  )
+
+  context = {'posts': posts}
+
+  # 아래 2번에서 만들 조각 템플릿으로 렌더링
+  return render(request, 'account/partials/my_post_list.html', context)

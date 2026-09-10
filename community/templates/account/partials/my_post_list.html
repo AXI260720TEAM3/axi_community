@@ -1,0 +1,20 @@
+{% if posts %}
+  <table class="list" style="border:0" id="mylist">
+    <tbody>
+      {% for post in posts %}
+        <tr>
+          <td class="subject">
+            <a href="{% url 'post_detail' post.pk %}">{{ post.title }}</a>
+            <span class="meta-inline">[{{ post.comments.count|default:0 }}]</span>
+          </td>
+          <td class="col-date">{{ post.created_at|date:"m-d" }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <div class="empty" id="myempty">
+    <b>아직 이 게시판에 쓴 글이 없습니다.</b>
+    궁금한 게 생기면 언제든 물어보세요.
+  </div>
+{% endif %}

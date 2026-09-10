@@ -37,6 +37,7 @@ urlpatterns = [
     # ---------------------------------------------------------------- [B] 마이페이지
     path("mypage/", mypage.mypage, name="mypage"),
     path("mypage/edit/", mypage.profile_edit, name="profile_edit"),
+    path('mypage/my-posts/', mypage.my_posts_ajax, name='my_posts_ajax'),
 
     # ---------------------------------------------------------------- [C] 댓글
     path("posts/<int:post_id>/comments/", comment.comment_create, name="comment_create"),

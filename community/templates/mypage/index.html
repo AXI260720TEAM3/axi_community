@@ -86,36 +86,69 @@
   </div>
 </form>
 
-<!-- 내가 쓴 글 목록 영역 -->
+<!-- 내가 쓴 글 목록 영역 (수정 완료본) -->
 <div class="panel pad">
   <h2>내가 쓴 글</h2>
+  
+  <!-- 버튼들에 type, class, data-board 속성을 추가했습니다 -->
   <div class="tabs" style="margin-top:14px" id="mytabs">
-    <button aria-current="true">자유게시판</button>
-    <button>Q&amp;A</button>
-    <button>취업정보</button>
-    <button>공지사항</button>
+    <button type="button" class="tab-btn" aria-current="true" data-board="자유게시판">자유게시판</button>
+    <button type="button" class="tab-btn" data-board="Q&A">Q&amp;A</button>
+    <button type="button" class="tab-btn" data-board="취업정보">취업정보</button>
+    <button type="button" class="tab-btn" data-board="공지사항">공지사항</button>
   </div>
 
-  {% if my_posts %}
-    <table class="list" style="margin-top:16px;border:0" id="mylist">
-      <tbody>
-        {% for post in my_posts %}
-          <tr>
-            <td class="subject">
-              <a href="{% url 'post_detail' post.pk %}">{{ post.title }}</a>
-              <span class="meta-inline">[{{ post.comments.count|default:0 }}]</span>
-            </td>
-            <td class="col-date">{{ post.created_at|date:"m-d" }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <div class="empty" id="myempty">
-      <b>아직 이 게시판에 쓴 글이 없습니다</b>
-      궁금한 게 생기면 언제든 물어보세요.
-      <div style="margin-top:12px;"><a class="btn" href="{% url 'mypage' %}">글쓰기</a></div>
-    </div>
-  {% endif %}
+  <!-- AJAX로 불러온 글 목록이 들어갈 영역입니다 -->
+  <div id="my-post-container" style="margin-top: 16px;">
+    <!-- 자바스크립트가 실행되면서 목록이 여기에 들어옵니다 -->
+  </div>
 </div>
+
+<!-- AJAX 자바스크립트 스크립트 추가 -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const tabButtons = document.querySelectorAll('#mytabs .tab-btn');
+  const container = document.getElementById('my-post-container');
+
+  function loadMyPosts(boardName) {
+    // 1. 요청 전 로딩 표시
+    container.innerHTML = '<div style="padding:20px; text-align:center;">로딩 중...</div>';
+
+    // 2. URL 연결
+    const url = "{% url 'my_posts_ajax' %}?board_name=" + encodeURIComponent(boardName);
+
+    fetch(url)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('네트워크 응답 오류: ' + response.status);
+        }
+        return response.text();
+      })
+      .then(html => {
+        container.innerHTML = html;
+      })
+      .catch(error => {
+        console.error('Fetch Error:', error);
+        container.innerHTML = '<div style="padding:20px; text-align:center; color:red;">목록을 불러오는 중 오류가 발생했습니다. (콘솔 확인)</div>';
+      });
+  }
+
+  tabButtons.forEach(button => {
+    button.addEventListener('click', function (e) {
+      e.preventDefault(); // 기본 이벤트 차단
+
+      // 활성화 클래스/속성 교체
+      tabButtons.forEach(btn => btn.removeAttribute('aria-current'));
+      this.setAttribute('aria-current', 'true');
+
+      // 선택한 게시판 명칭 가져오기
+      const boardName = this.getAttribute('data-board');
+      loadMyPosts(boardName);
+    });
+  });
+
+  // 초기 실행
+  loadMyPosts('자유게시판');
+});
+</script>
 {% endblock %}

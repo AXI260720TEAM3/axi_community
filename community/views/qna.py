@@ -10,31 +10,191 @@
 """
 
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from django.core.paginator import Paginator
+from django.db.models import Count, Prefetch, Q
+from django.shortcuts import get_object_or_404, redirect, render
 
 from ..models import Board, BoardPermission, Post
 from ..permissions import can_write
 
 
+PAGE_SIZE = 10
+QNA_BOARD_NAME = "Q&A"
+
+
 def qna_list(request):
-    # TODO [C] 질문 목록 + 각 질문의 답변 수. 답변 없는 질문을 구분해서 보여주면 좋습니다.
-    #          board.py 의 board_list 를 참고하면 검색·페이지네이션을 그대로 쓸 수 있습니다.
-    return render(request, "qna/list.html", {"nav_current": "qna"})
+    board = get_object_or_404(Board, board_name=QNA_BOARD_NAME)
+    keyword = request.GET.get("q", "").strip()
+
+    answers_queryset = (
+        Post.objects.visible()
+        .select_related("writer", "writer__user_type")
+        .order_by("created_at")
+    )
+
+    questions = (
+        Post.objects.visible()
+        .roots()
+        .filter(board=board)
+        .select_related("writer", "writer__user_type")
+        .annotate(
+            answer_count=Count(
+                "answers",
+                filter=Q(answers__is_deleted=False),
+                distinct=True,
+            )
+        )
+        .prefetch_related(
+            Prefetch(
+                "answers",
+                queryset=answers_queryset,
+                to_attr="visible_answers",
+            )
+        )
+    )
+
+    if keyword:
+        questions = questions.filter(
+            Q(title__icontains=keyword)
+            | Q(content__icontains=keyword)
+            | Q(
+                answers__is_deleted=False,
+                answers__title__icontains=keyword,
+            )
+            | Q(
+                answers__is_deleted=False,
+                answers__content__icontains=keyword,
+            )
+        ).distinct()
+
+    questions = questions.order_by("-created_at")
+
+    page = Paginator(questions, PAGE_SIZE).get_page(request.GET.get("page"))
+
+    return render(
+        request,
+        "qna/list.html",
+        {
+            "board": board,
+            "page": page,
+            "keyword": keyword,
+            "can_ask": can_write(
+                request.user,
+                board,
+                BoardPermission.PermissionType.QUESTION,
+            ),
+            "nav_current": "qna",
+        },
+    )
 
 
 def qna_detail(request, post_id):
-    # TODO [C] 질문 + 딸린 답변들(post.answers.filter(is_deleted=False))
-    return render(request, "qna/list.html", {"nav_current": "qna"})
+    question = get_object_or_404(
+        Post.objects.visible()
+        .roots()
+        .select_related("board", "writer", "writer__user_type"),
+        post_id=post_id,
+        board__board_name=QNA_BOARD_NAME,
+    )
+
+    answers = (
+        question.answers.filter(is_deleted=False)
+        .select_related("writer", "writer__user_type")
+        .order_by("created_at")
+    )
+
+    return render(
+        request,
+        "qna/detail.html",
+        {
+            "question": question,
+            "answers": answers,
+            "can_answer": can_write(
+                request.user,
+                question.board,
+                BoardPermission.PermissionType.ANSWER,
+            ),
+            "nav_current": "qna",
+        },
+    )
 
 
 @login_required
 def qna_ask(request):
-    # TODO [C] can_write(user, board, PermissionType.QUESTION) 확인 후 질문 등록
-    raise NotImplementedError("qna_ask — [C] 담당")
+    board = get_object_or_404(Board, board_name=QNA_BOARD_NAME)
+
+    if not can_write(
+        request.user,
+        board,
+        BoardPermission.PermissionType.QUESTION,
+    ):
+        return redirect("qna_list")
+
+    if request.method == "POST":
+        title = request.POST.get("title", "").strip()
+        content = request.POST.get("content", "").strip()
+
+        if title and content:
+            question = Post.objects.create(
+                board=board,
+                writer=request.user,
+                title=title,
+                content=content,
+            )
+            return redirect("qna_detail", post_id=question.post_id)
+
+        return render(
+            request,
+            "qna/ask.html",
+            {
+                "board": board,
+                "title": title,
+                "content": content,
+                "error": "제목과 내용을 모두 입력해주세요.",
+                "nav_current": "qna",
+            },
+        )
+
+    return render(
+        request,
+        "qna/ask.html",
+        {
+            "board": board,
+            "nav_current": "qna",
+        },
+    )
 
 
 @login_required
 def qna_answer(request, post_id):
-    # TODO [C] can_write(user, board, PermissionType.ANSWER) 확인
-    #          Post 를 만들고 parent 에 질문을 넣습니다. board 는 질문과 같은 Q&A 입니다.
-    raise NotImplementedError("qna_answer — [C] 담당")
+    question = get_object_or_404(
+        Post.objects.visible()
+        .roots()
+        .select_related("board"),
+        post_id=post_id,
+        board__board_name=QNA_BOARD_NAME,
+    )
+
+    if not can_write(
+        request.user,
+        question.board,
+        BoardPermission.PermissionType.ANSWER,
+    ):
+        return redirect("qna_detail", post_id=question.post_id)
+
+    if request.method == "POST":
+        title = request.POST.get("title", "").strip()
+        content = request.POST.get("content", "").strip()
+
+        if title and content:
+            Post.objects.create(
+                board=question.board,
+                writer=request.user,
+                parent=question,
+                title=title,
+                content=content,
+            )
+
+        return redirect("qna_detail", post_id=question.post_id)
+
+    return redirect("qna_detail", post_id=question.post_id)

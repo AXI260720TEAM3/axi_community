@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}{{ question.title }} · 모두의국비{% endblock %}
+
+{% block content %}
+<div class="head">
+  <div class="crumb">
+    <a href="{% url 'qna_list' %}">Q&amp;A</a> · 질문
+  </div>
+
+  <a class="btn quiet" href="{% url 'qna_list' %}">목록으로</a>
+</div>
+
+<article class="panel">
+  <div class="post-head">
+    <h1>{{ question.title }}</h1>
+
+    <div class="post-meta">
+      <span>
+        <a href="{% url 'message_box' %}?receiver={{ question.writer.username }}">
+          {{ question.writer.member_name }}
+        </a>
+        · {{ question.writer.user_type.type_name }}
+      </span>
+
+      <span>{{ question.created_at|date:"Y년 n월 j일 H:i" }}</span>
+
+      {% if question.updated_at %}
+        <span>수정됨</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="post-body">
+    {{ question.content|linebreaks }}
+  </div>
+</article>
+
+<div class="panel">
+  <div class="cmt-head">답변 {{ answers|length }}</div>
+
+  {% for a in answers %}
+    <div class="cmt">
+      <div class="cmt-top">
+        <a href="{% url 'message_box' %}?receiver={{ a.writer.username }}">
+          <b>{{ a.writer.member_name }}</b>
+        </a>
+
+        <span class="tag">{{ a.writer.user_type.type_name }}</span>
+        <time>{{ a.created_at|date:"n월 j일 H:i" }}</time>
+      </div>
+
+      <h3>{{ a.title }}</h3>
+      <p>{{ a.content|linebreaksbr }}</p>
+    </div>
+
+  {% empty %}
+    <div class="cmt gone">
+      <p>아직 등록된 답변이 없습니다.</p>
+    </div>
+  {% endfor %}
+</div>
+
+{% if can_answer %}
+<div class="panel">
+  <h2>답변 작성</h2>
+
+  <form
+    method="post"
+    action="{% url 'qna_answer' question.post_id %}"
+  >
+    {% csrf_token %}
+
+    <div class="field">
+      <label for="id_answer_title">답변 제목</label>
+      <input
+        id="id_answer_title"
+        type="text"
+        name="title"
+        maxlength="250"
+        placeholder="답변 제목을 입력하세요"
+        required
+      >
+    </div>
+
+    <div class="field">
+      <label for="id_answer_content">답변 내용</label>
+      <textarea
+        id="id_answer_content"
+        name="content"
+        rows="8"
+        placeholder="답변 내용을 입력하세요"
+        required
+      ></textarea>
+    </div>
+
+    <div class="row">
+      <button class="btn" type="submit">답변 등록</button>
+    </div>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

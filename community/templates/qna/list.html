@@ -1,14 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Q&A · 모두의국비{% endblock %}
 
-{% comment %} ----------------------------------------------------------------
-   [C] 담당 화면입니다.
-   목업 HTML 을 그대로 옮겨두었습니다. 지금은 값이 전부 고정되어 있습니다.
-   뷰에서 넘긴 데이터로 바꾸는 것이 여러분의 작업입니다.
-   반복되는 부분은 {% for %} 로, 값은 {{ }} 로 바꾸세요.
-   링크는 반드시 {% url '이름' %} 을 쓰세요. 경로를 직접 적지 마세요.
-   ---------------------------------------------------------------- {% endcomment %}
-
 {% block content %}
 <div class="head">
   <div>
@@ -16,53 +8,143 @@
     <h1>Q&amp;A</h1>
     <p class="lede">수강생이 질문을 올리면 멘토가 답변합니다. 이 게시판에는 댓글을 달 수 없습니다.</p>
   </div>
-  <a class="btn" href="post_form.html#qna">질문하기</a>
+
+  {% if can_ask %}
+    <a class="btn" href="{% url 'qna_ask' %}">질문하기</a>
+  {% endif %}
 </div>
 
 <div class="filters">
   <div class="search">
-    <input placeholder="질문이나 답변에서 검색" aria-label="Q&amp;A 검색">
+    <input
+      name="q"
+      value="{{ keyword }}"
+      placeholder="질문이나 답변에서 검색"
+      aria-label="Q&amp;A 검색"
+    >
     <button>검색</button>
   </div>
   <span class="selectish">전체</span>
 </div>
 
 <table class="list">
-  <thead><tr><th class="col-no">번호</th><th>제목</th><th class="col-writer">작성자</th><th class="col-date">작성일</th></tr></thead>
+  <thead>
+    <tr>
+      <th class="col-no">번호</th>
+      <th>제목</th>
+      <th class="col-writer">작성자</th>
+      <th class="col-date">작성일</th>
+    </tr>
+  </thead>
+
   <tbody>
-    <tr><td class="col-no">87</td>
-      <td class="subject"><a href="post_detail.html#qna">Django에서 ForeignKey의 related_name은 언제 꼭 써야 하나요</a></td>
-      <td class="col-writer"><a class="writer" href="message_box.html">김수강</a></td><td class="col-date">09-06</td></tr>
-    <tr><td class="col-no"></td>
-      <td class="subject"><span class="reply-mark">&#8627;</span><span class="tag answer">답변</span>
-        <a href="post_detail.html#qna">역참조 이름이 겹칠 때 꼭 필요합니다. 같은 모델을 두 번 참조하는 경우가 대표적인데요</a>
-        <span class="meta-inline">첨부 1</span></td>
-      <td class="col-writer"><a class="writer" href="message_box.html">최민재</a></td><td class="col-date">09-06</td></tr>
+    {% for q in page %}
 
-    <tr><td class="col-no">86</td>
-      <td class="subject"><a href="post_detail.html#qna">가상환경을 매번 새로 만들어야 하는 이유가 뭔가요</a></td>
-      <td class="col-writer"><a class="writer" href="message_box.html">이가온</a></td><td class="col-date">09-05</td></tr>
-    <tr><td class="col-no"></td>
-      <td class="subject"><span class="reply-mark">&#8627;</span><span class="tag answer">답변</span>
-        <a href="post_detail.html#qna">프로젝트마다 쓰는 패키지 버전이 다르기 때문입니다</a></td>
-      <td class="col-writer"><a class="writer" href="message_box.html">최민재</a></td><td class="col-date">09-05</td></tr>
+      <tr>
+        <td class="col-no">{{ q.post_id }}</td>
 
-    <tr><td class="col-no">85</td>
-      <td class="subject"><a href="post_detail.html#qna">M:N 관계를 중간 테이블로 푸는 기준이 궁금합니다</a>
-        <span class="tag open">답변 대기</span><span class="meta-inline">첨부 2</span></td>
-      <td class="col-writer"><a class="writer" href="message_box.html">정하늘</a></td><td class="col-date">09-04</td></tr>
+        <td class="subject">
+          <a href="{% url 'qna_detail' q.post_id %}">
+            {{ q.title }}
+          </a>
 
-    <tr><td class="col-no">84</td>
-      <td class="subject"><a href="post_detail.html#qna">git merge와 rebase 중에 팀 프로젝트에서는 뭘 써야 할까요</a>
-        <span class="tag open">답변 대기</span></td>
-      <td class="col-writer"><a class="writer" href="message_box.html">윤도현</a></td><td class="col-date">09-03</td></tr>
+          {% if q.answer_count == 0 %}
+            <span class="tag open">답변 대기</span>
+          {% endif %}
+        </td>
+
+        <td class="col-writer">
+          <a
+            class="writer"
+            href="{% url 'message_box' %}?receiver={{ q.writer.username }}"
+          >
+            {{ q.writer.member_name }}
+          </a>
+        </td>
+
+        <td class="col-date">
+          {{ q.created_at|date:"m-d" }}
+        </td>
+      </tr>
+
+
+      {% for a in q.visible_answers %}
+
+        <tr>
+          <td class="col-no"></td>
+
+          <td class="subject">
+            <span class="reply-mark">&#8627;</span>
+            <span class="tag answer">답변</span>
+
+            <a href="{% url 'qna_detail' q.post_id %}">
+              {{ a.title }}
+            </a>
+          </td>
+
+          <td class="col-writer">
+            <a
+              class="writer"
+              href="{% url 'message_box' %}?receiver={{ a.writer.username }}"
+            >
+              {{ a.writer.member_name }}
+            </a>
+          </td>
+
+          <td class="col-date">
+            {{ a.created_at|date:"m-d" }}
+          </td>
+        </tr>
+
+      {% endfor %}
+
+    {% empty %}
+
+      <tr>
+        <td class="col-no"></td>
+        <td class="subject">등록된 질문이 없습니다.</td>
+        <td class="col-writer"></td>
+        <td class="col-date"></td>
+      </tr>
+
+    {% endfor %}
   </tbody>
 </table>
 
 <div class="pager">
-  <button>이전</button>
-  <button aria-current="true">1</button><button>2</button><button>3</button>
-  <button>다음</button>
+
+  {% if page.has_previous %}
+    <button
+      onclick="location.href='?page={{ page.previous_page_number }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}'"
+    >
+      이전
+    </button>
+  {% else %}
+    <button disabled>이전</button>
+  {% endif %}
+
+  {% for num in page.paginator.page_range %}
+    {% if num == page.number %}
+      <button aria-current="true">{{ num }}</button>
+    {% else %}
+      <button
+        onclick="location.href='?page={{ num }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}'"
+      >
+        {{ num }}
+      </button>
+    {% endif %}
+  {% endfor %}
+
+  {% if page.has_next %}
+    <button
+      onclick="location.href='?page={{ page.next_page_number }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}'"
+    >
+      다음
+    </button>
+  {% else %}
+    <button disabled>다음</button>
+  {% endif %}
+
 </div>
 
 <div class="note">질문은 수강생이, 답변은 멘토가 씁니다. 답변도 게시글로 저장되고 원 질문을 가리킵니다.</div>

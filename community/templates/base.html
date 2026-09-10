@@ -66,7 +66,11 @@
 
 <main class="stage">
 {% if messages %}
-  {% for m in messages %}<div class="note">{{ m }}</div>{% endfor %}
+  {% for m in messages %}
+    {% if 'alert' not in m.tags %}
+      <div class="note">{{ m }}</div>
+    {% endif %}
+  {% endfor %}
 {% endif %}
 
 {% block content %}{% endblock %}
@@ -75,5 +79,41 @@
 </div>
 
 {% block extra_js %}{% endblock %}
+
+{% comment %} ----------------------------------------------------------------
+   팝업 알림. extra_tags="alert" 로 보낸 메시지만 여기서 모달로 뜹니다.
+
+       messages.error(request, "문구", extra_tags="alert")
+
+   브라우저의 alert() 를 쓰지 않습니다.
+   alert() 는 Chrome 설정이나 확장 프로그램에 막혀서 조용히 안 뜨는 일이 있습니다.
+   이건 그냥 <div> 라서 어떤 환경에서도 똑같이 보입니다.
+
+   태그를 안 붙인 메시지는 위쪽 본문에 인라인(.note)으로 나옵니다. 그건 그대로입니다.
+   ---------------------------------------------------------------- {% endcomment %}
+{% for m in messages %}
+  {% if 'alert' in m.tags %}
+    <div class="modal" id="modal-{{ forloop.counter }}">
+      <div class="modal-box" role="alertdialog" aria-modal="true"
+           aria-labelledby="modal-text-{{ forloop.counter }}">
+        <p class="modal-text" id="modal-text-{{ forloop.counter }}">{{ m }}</p>
+        <div class="modal-foot">
+          <button type="button" class="btn" autofocus
+                  onclick="document.getElementById('modal-{{ forloop.counter }}').remove()">확인</button>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+{% endfor %}
+
+{% comment %} Esc 로도 닫히게. 없어도 확인 버튼으로 닫힙니다. {% endcomment %}
+<script>
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") {
+    var m = document.querySelector(".modal");
+    if (m) m.remove();
+  }
+});
+</script>
 </body>
 </html>

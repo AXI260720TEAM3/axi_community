@@ -8,23 +8,22 @@ from community.models import Post, Board
 
 @login_required
 def mypage(request):
-    """마이페이지 대시보드: 내 활동 통계 및 작성 글 조회"""
     user = request.user
 
     # 내가 쓴 글 목록
     my_posts = Post.objects.visible().filter(writer=user).order_by('-created_at')
 
-    # 게시판별 작성 글 수 통계
-    free_post_count = my_posts.filter(board_id=1).count()
-    qna_count = my_posts.filter(board_id=2).count()
+    # 게시판 이름(board_name)으로 직접 카운트 조회
+    free_post_count = my_posts.filter(board__board_name='자유게시판').count()
+    qna_count = my_posts.filter(board__board_name='Q&A').count()
 
     context = {
         'nav_current': 'mypage',
         'my_posts': my_posts,
         'free_post_count': free_post_count,
         'qna_count': qna_count,
-        'comment_count': 0,          # 댓글 기능 구현 전까지 0으로 고정
-        'unread_message_count': 0,  # 쪽지 기능 구현 전까지 0으로 고정
+        'comment_count': 0,
+        'unread_message_count': 0,
     }
 
     return render(request, "mypage/index.html", context)

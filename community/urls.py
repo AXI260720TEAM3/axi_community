@@ -32,6 +32,7 @@ urlpatterns = [
     path("accounts/logout/", account.logout_view, name="logout"),
     path("accounts/signup/", account.signup, name="signup"),
     path("accounts/find/", account.find_account, name="find_account"),
+    path('check-username/', account.check_username, name='check_username'),
 
     # ---------------------------------------------------------------- [B] 마이페이지
     path("mypage/", mypage.mypage, name="mypage"),

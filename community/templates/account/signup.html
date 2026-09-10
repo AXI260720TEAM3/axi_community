@@ -13,10 +13,13 @@
 <form id="signup-form" method="post" action="{% url 'signup' %}">
   {% csrf_token %}
 
-  <!-- 아이디 -->
+  <!-- 아이디 (중복확인 버튼 추가) -->
   <div class="field" id="field-username">
     <label for="su-id">아이디</label>
-    <input class="control" id="su-id" name="username" value="{{ form.username.value|default:'' }}" required>
+    <div style="display: flex; gap: 8px;">
+      <input class="control" id="su-id" name="username" value="{{ form.username.value|default:'' }}" required style="flex: 1;">
+      <button type="button" id="btn-check-id" class="btn quiet" style="white-space: nowrap; width: auto; padding: 0 12px;">중복 확인</button>
+    </div>
     <div class="err" style="display:none;"></div>
   </div>
 
@@ -81,16 +84,19 @@
 
 <div class="gate-links"><a href="{% url 'login' %}">이미 계정이 있어요</a></div>
 
-<!-- 실시간 유효성 검사 자바스크립트 -->
+<!-- 실시간 유효성 검사 및 AJAX 자바스크립트 -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const usernameInput = document.getElementById('su-id');
+  const btnCheckId = document.getElementById('btn-check-id');
   const passwordInput = document.getElementById('su-pw');
   const passwordConfirmInput = document.getElementById('su-pw2');
   const phoneInput = document.getElementById('su-phone');
 
-  // 에러 메시지 표시 함수
-  function showError(input, message) {
+  let isUsernameValid = false; // 아이디 중복 통과 여부 플래그
+
+  // 메시지 표시 함수 (에러/성공 공용)
+  function showMessage(input, message, isError = true) {
     const field = input.closest('.field');
     let errDiv = field.querySelector('.err');
     if (!errDiv) {
@@ -98,12 +104,20 @@ document.addEventListener('DOMContentLoaded', function() {
       errDiv.className = 'err';
       field.appendChild(errDiv);
     }
-    field.classList.add('bad');
+    
+    if (isError) {
+      field.classList.add('bad');
+      errDiv.style.color = '#e53e3e'; // 에러 색상
+    } else {
+      field.classList.remove('bad');
+      errDiv.style.color = '#2b6cb0'; // 성공 안내 색상
+    }
+    
     errDiv.textContent = message;
     errDiv.style.display = 'block';
   }
 
-  // 에러 메시지 제거 함수
+  // 메시지 제거 함수
   function clearError(input) {
     const field = input.closest('.field');
     const errDiv = field.querySelector('.err');
@@ -114,11 +128,57 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // 1. 비밀번호 실시간 검증 (8자 이상)
+  // 1. AJAX 아이디 중복 검사 함수
+  async function checkUsername() {
+    const username = usernameInput.value.trim();
+    if (!username) {
+      showMessage(usernameInput, '아이디를 입력해주세요.');
+      isUsernameValid = false;
+      return false;
+    }
+
+    if (username.length < 4) {
+      showMessage(usernameInput, '아이디는 최소 4자 이상이어야 합니다.');
+      isUsernameValid = false;
+      return false;
+    }
+
+    try {
+      // Django View로 AJAX 요청 (fetch)
+      const response = await fetch(`{% url 'check_username' %}?username=${encodeURIComponent(username)}`);
+      const data = await response.json();
+
+      if (data.is_taken) {
+        showMessage(usernameInput, '이미 사용 중인 아이디입니다.');
+        isUsernameValid = false;
+        return false;
+      } else {
+        showMessage(usernameInput, '사용 가능한 아이디입니다.', false);
+        isUsernameValid = true;
+        return true;
+      }
+    } catch (error) {
+      console.error('아이디 중복 검사 오류:', error);
+      showMessage(usernameInput, '중복 확인 중 오류가 발생했습니다.');
+      isUsernameValid = false;
+      return false;
+    }
+  }
+
+  // 아이디 입력값이 변경되면 중복 확인 상태 초기화
+  usernameInput.addEventListener('input', function() {
+    isUsernameValid = false;
+    clearError(usernameInput);
+  });
+
+  // [중복 확인] 버튼 클릭 이벤트
+  btnCheckId.addEventListener('click', checkUsername);
+
+  // 2. 비밀번호 실시간 검증 (8자 이상)
   function validatePassword() {
     const val = passwordInput.value;
     if (val.length > 0 && val.length < 8) {
-      showError(passwordInput, '비밀번호는 8자 이상이어야 합니다.');
+      showMessage(passwordInput, '비밀번호는 8자 이상이어야 합니다.');
       return false;
     } else {
       clearError(passwordInput);
@@ -126,12 +186,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // 2. 비밀번호 확인 일치 실시간 검증
+  // 3. 비밀번호 확인 일치 실시간 검증
   function validatePasswordConfirm() {
     const pw = passwordInput.value;
     const pwConfirm = passwordConfirmInput.value;
     if (pwConfirm.length > 0 && pw !== pwConfirm) {
-      showError(passwordConfirmInput, '비밀번호가 일치하지 않습니다.');
+      showMessage(passwordConfirmInput, '비밀번호가 일치하지 않습니다.');
       return false;
     } else {
       clearError(passwordConfirmInput);
@@ -139,12 +199,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // 3. 전화번호 실시간 검증 (숫자만 10~11자)
+  // 4. 전화번호 실시간 검증 (숫자만 10~11자)
   function validatePhone() {
     const val = phoneInput.value;
     const phoneRegex = /^\d{10,11}$/;
     if (val.length > 0 && !phoneRegex.test(val)) {
-      showError(phoneInput, '하이픈(-) 없이 숫자 10자리 또는 11자리를 입력하세요.');
+      showMessage(phoneInput, '하이픈(-) 없이 숫자 10자리 또는 11자리를 입력하세요.');
       return false;
     } else {
       clearError(phoneInput);
@@ -152,22 +212,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // 이벤트 리스너 등록 (입력할 때 + 포커스 벗어날 때)
+  // 이벤트 리스너 등록
   passwordInput.addEventListener('input', validatePassword);
   passwordInput.addEventListener('input', validatePasswordConfirm);
   passwordConfirmInput.addEventListener('input', validatePasswordConfirm);
   phoneInput.addEventListener('input', validatePhone);
 
   // 폼 제출 전 전체 검사
-  document.getElementById('signup-form').addEventListener('submit', function(e) {
+  document.getElementById('signup-form').addEventListener('submit', async function(e) {
+    e.preventDefault(); // 기본 제출 일시 정지
+
     let isValid = true;
 
     if (!validatePassword()) isValid = false;
     if (!validatePasswordConfirm()) isValid = false;
     if (!validatePhone()) isValid = false;
 
-    if (!isValid) {
-      e.preventDefault(); // 조건 미충족 시 제출 막음
+    // 아이디 중복확인을 하지 않았거나 실패한 경우
+    if (!isUsernameValid) {
+      const isOk = await checkUsername();
+      if (!isOk) isValid = false;
+    }
+
+    // 모든 조건 충족 시 폼 제출 진행
+    if (isValid) {
+      this.submit();
     }
   });
 });

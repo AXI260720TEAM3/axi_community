@@ -41,14 +41,23 @@ def post_create(request, board_id):
         return redirect("board_list", board_id=board.board_id)
 
     if request.method == "POST":
+        title = request.POST.get("title","").strip()
+        content = request.POST.get("content","").strip()
         # print(request.POST)
+
+        if not title or not content:
+            messages.error(request,"제목과 내용을 모두 입력하세요.", extra_tags="alert")
+            return render(request, "board/form.html",
+                          {"board":board,"title":title,"content":content})
+
         post = Post.objects.create(
             board=board,
             writer=request.user,
-            title=request.POST["title"],
-            content=request.POST["content"],
+            title=title,
+            content=content,
         )
         return redirect("post_detail",post_id=post.post_id)
+    
     return render(request, "board/form.html",{"board": board})
     # TODO [A] 작성 권한 확인(permissions.can_write) → 폼 검증 → 저장 → 첨부파일 처리
     #          첨부파일은 request.FILES.getlist('files') 로 여러 개를 받습니다.

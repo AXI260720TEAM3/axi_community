@@ -22,9 +22,9 @@
     <div class="cmt">
       <div class="cmt-top">
 
-        <a href="{% url 'message_send' %}?receiver={{ c.writer.username }}">
-          <b>{{ c.writer.member_name }}</b>
-        </a>
+        <a href="{% url 'message_box' %}?receiver={{ c.writer.username }}">
+        <b>{{ c.writer.member_name }}</b>
+</a>
 
         <span class="tag">{{ c.writer.user_type.type_name }}</span>
         <time>{{ c.created_at|date:"n월 j일 H:i" }}</time>
@@ -76,3 +76,5 @@
   {% endif %}
 </div>
 {% endif %}
+
+

@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}쪽지 상세 · 모두의국비{% endblock %}
+
+{% block content %}
+
+<div class="head">
+  <div>
+    <div class="crumb">내 활동</div>
+    <h1>쪽지 상세</h1>
+  </div>
+</div>
+
+<div class="panel">
+
+  <div class="pad">
+
+    <div class="mail-top">
+
+      {% if message.sender == request.user %}
+
+        <b>{{ message.receiver.member_name }}</b>
+
+        {% if message.receiver.user_type %}
+          <span class="tag answer">
+            {{ message.receiver.user_type.type_name }}
+          </span>
+        {% endif %}
+
+      {% else %}
+
+        <b>{{ message.sender.member_name }}</b>
+
+        {% if message.sender.user_type %}
+          <span class="tag answer">
+            {{ message.sender.user_type.type_name }}
+          </span>
+        {% endif %}
+
+      {% endif %}
+
+      <time>
+        {{ message.sent_at|date:"Y.m.d H:i" }}
+      </time>
+
+    </div>
+
+    <div class="field">
+
+      <label>내용</label>
+
+      <div class="control">
+        {{ message.content|linebreaksbr }}
+      </div>
+
+    </div>
+
+    {% if message.sender == request.user %}
+
+      <div class="field">
+
+        <label>읽음 상태</label>
+
+        {% if message.read_at %}
+          <p>
+            읽음 · {{ message.read_at|date:"Y.m.d H:i" }}
+          </p>
+        {% else %}
+          <p>
+            읽지 않음
+          </p>
+        {% endif %}
+
+      </div>
+
+    {% else %}
+
+      <div class="field">
+
+        <label>읽음 상태</label>
+
+        <p>
+          읽음 · {{ message.read_at|date:"Y.m.d H:i" }}
+        </p>
+
+      </div>
+
+    {% endif %}
+
+    <div class="formfoot">
+
+      <a
+        href="{% url 'message_box' %}"
+        class="btn"
+      >
+        쪽지함으로
+      </a>
+
+      {% if message.receiver == request.user %}
+
+        <a
+          href="{% url 'message_box' %}?receiver={{ message.sender.username }}"
+          class="btn"
+        >
+          답장하기
+        </a>
+
+      {% endif %}
+
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}

@@ -51,4 +51,3 @@ def comment_delete(request, comment_id):
         comment.save(update_fields=["is_deleted"])
 
     return redirect("post_detail", post_id=post_id)
-

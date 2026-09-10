@@ -37,7 +37,7 @@
     {% for a in attachments %}
       {# TODO [A] href 를 {% url 'attachment_download' a.attachment_id %} 로 바꾸세요 #}
       <div class="file">
-        <span class="name">{{ a.origin_name }}</span>
+        <a class="name" href="{% url 'attachment_download' a.attachment_id %}">{{ a.origin_name }}</a>
         <span class="size">{{ a.file_size|filesizeformat }}</span>
       </div>
     {% endfor %}

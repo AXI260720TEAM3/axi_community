@@ -18,7 +18,7 @@
   </div>
 </div>
 
-<form class="panel pad" method="post">
+<form class="panel pad" method="post" enctype="multipart/form-data">
   {% csrf_token %}
   <div class="field">
     <label for="w-board">게시판</label>
@@ -35,12 +35,8 @@
            placeholder="내용을 입력하세요" required>{{ content }}</textarea>
   </div>
   <div class="field">
-    <label>첨부파일 <span class="hint">여러 개 올릴 수 있습니다</span></label>
-    <div class="dropzone">파일을 끌어다 놓거나 클릭해서 고르세요</div>
-    <div class="attached">
-      <div class="file"><span class="name">알고리즘_스터디_운영안.pdf</span><span class="size">248 KB</span><button class="x" aria-label="첨부 취소">×</button></div>
-      <div class="file"><span class="name">1주차_문제목록.xlsx</span><span class="size">31 KB</span><button class="x" aria-label="첨부 취소">×</button></div>
-    </div>
+    <label for="w-files">첨부파일 <span class="hint">여러 개 올릴 수 있습니다</span></label>
+    <input class="control" type="file" id="w-files" name="files" multiple>
   </div>
   <div class="formfoot">
     <a class="btn quiet" href="{% url 'board_list' board.board_id %}">취소</a>

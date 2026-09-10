@@ -14,6 +14,11 @@ from django.utils import timezone
 
 from django.contrib import messages
 
+import logging
+from django.http import FileResponse
+
+logger = logging.getLogger(__name__)
+
 
 def post_detail(request, post_id):
     post = get_object_or_404(
@@ -41,6 +46,7 @@ def post_create(request, board_id):
         return redirect("board_list", board_id=board.board_id)
 
     if request.method == "POST":
+        # print("FILES:", request.FILES.getlist("files"))
         title = request.POST.get("title","").strip()
         content = request.POST.get("content","").strip()
         # print(request.POST)
@@ -56,6 +62,13 @@ def post_create(request, board_id):
             title=title,
             content=content,
         )
+        for f in request.FILES.getlist("files"):
+            Attachment.objects.create(
+                post=post,
+                origin_name=f.name,
+                stored_path=f,
+                file_size=f.size,
+            )
         return redirect("post_detail",post_id=post.post_id)
     
     return render(request, "board/form.html",{"board": board})
@@ -103,5 +116,16 @@ def post_delete(request, post_id):
 
 
 def attachment_download(request, attachment_id):
-    # TODO [A] FileResponse 로 내려주기. 다운로드 파일명은 origin_name 을 사용합니다.
-    raise NotImplementedError("attachment_download — [A] 팀장 담당")
+    a = get_object_or_404(Attachment, pk=attachment_id, post__is_deleted=False)
+
+    try:
+        f = a.stored_path.open("rb")
+    except FileNotFoundError:
+        logger.warning("첨부파일 없음: id=%s path=%s", a.attachment_id, a.stored_path.name)
+        messages.error(request, "파일을 찾을 수 없습니다. 관리자에게 문의하세요.", extra_tags="alert")
+        return redirect("post_detail", post_id=a.post_id)
+    
+    return FileResponse(f, as_attachment=True, filename=a.origin_name)
+
+    # # TODO [A] FileResponse 로 내려주기. 다운로드 파일명은 origin_name 을 사용합니다.
+    # raise NotImplementedError("attachment_download — [A] 팀장 담당")

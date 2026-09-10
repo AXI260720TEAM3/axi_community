@@ -196,6 +196,14 @@ textarea:focus{outline:none;border-color:var(--chalk)}
 .stat span{font-size:12.5px;color:var(--muted)}
 .note{font-size:13px;color:var(--muted);background:#FAFBFA;border:1px solid var(--rule);border-radius:7px;padding:11px 14px;margin-top:16px}
 
+/* ---------- 팝업 알림(모달) ---------- */
+/* base.html 이 extra_tags="alert" 메시지를 이 모양으로 띄웁니다.
+   브라우저 alert() 대신 쓰는 것이라 환경을 타지 않습니다. */
+.modal{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(22,33,30,.45)}
+.modal-box{width:100%;max-width:380px;background:var(--paper);border:1px solid var(--rule);border-radius:9px;padding:24px 24px 18px;box-shadow:0 12px 32px rgba(22,33,30,.18)}
+.modal-text{font-size:15px;line-height:1.55;color:var(--ink)}
+.modal-foot{display:flex;justify-content:flex-end;margin-top:20px}
+
 /* ---------- 프로토타입 인덱스 ---------- */
 .cover{max-width:760px;margin:0 auto;padding:64px 24px 90px}
 .cover .wordmark{padding:0 0 8px;font-size:32px;color:var(--ink)}

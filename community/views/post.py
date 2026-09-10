@@ -9,8 +9,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render, redirect
 
 from ..models import Attachment, Post, Board
-from ..permissions import is_owner
+from ..permissions import is_owner, can_write, write_denied_reason
 from django.utils import timezone
+
+from django.contrib import messages
 
 
 def post_detail(request, post_id):
@@ -33,6 +35,11 @@ def post_detail(request, post_id):
 @login_required
 def post_create(request, board_id):
     board = get_object_or_404(Board, pk=board_id)
+
+    if not can_write(request.user, board):
+        messages.error(request, write_denied_reason(board), extra_tags="alert")
+        return redirect("board_list", board_id=board.board_id)
+
     if request.method == "POST":
         # print(request.POST)
         post = Post.objects.create(

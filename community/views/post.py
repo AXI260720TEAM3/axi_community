@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404, render, redirect
 
 from ..models import Attachment, Post, Board
 from ..permissions import is_owner
+from django.utils import timezone
 
 
 def post_detail(request, post_id):
@@ -50,8 +51,21 @@ def post_create(request, board_id):
 
 @login_required
 def post_update(request, post_id):
+    post = get_object_or_404(Post,pk=post_id, is_deleted=False)
+
+    if not is_owner(request.user, post):
+        return redirect("post_detail", post_id=post.post_id)
+
+    if request.method == "POST":
+        post.title = request.POST["title"]
+        post.content = request.POST["content"]
+        post.updated_at = timezone.now()
+        post.save()
+        return redirect("post_detail",post_id=post.post_id)
+    return render(request, "board/edit.html", {"post": post, "nav_current":post.board_id})
+
     # TODO [A] 작성자 본인인지 확인(permissions.is_owner) → 수정 → updated_at 갱신
-    raise NotImplementedError("post_update — [A] 팀장 담당")
+    #raise NotImplementedError("post_update — [A] 팀장 담당")
 
 
 @login_required

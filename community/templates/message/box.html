@@ -5,33 +5,122 @@
 {% block content %}
 
 <style>
-  .message-warning {
+  .message-warning,
+  .message-success {
     display: none;
-
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-
     z-index: 10000;
-
-    color: red;
     font-size: 16px;
     font-weight: 600;
-
     background: white;
     border: 1px solid #ddd;
     border-radius: 8px;
-
     padding: 14px 20px;
-
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
   }
+
+  .message-warning {
+    color: red;
+  }
+
+  .message-success {
+    color: black;
+  }
+
+  .mail {
+    align-items: flex-start;
+  }
+
+  /* 
+    base.html 등의 공통 CSS에서 두 번째 .panel에 margin-top이 붙어도
+    쪽지함 안의 좌/우 패널은 위쪽 시작점을 동일하게 맞춥니다.
+  */
+  .mail > .panel {
+    margin-top: 0;
+  }
+
+  /*
+    왼쪽 받은/보낸 쪽지 박스와 오른쪽 쪽지 보내기 박스의
+    바깥 높이만 동일하게 고정합니다.
+  */
+  .message-list-panel,
+  .message-send-panel {
+    height: 540px;
+    min-height: 540px;
+    max-height: 540px;
+    box-sizing: border-box;
+  }
+
+  .message-list-panel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .message-list-panel .tabs {
+    flex: 0 0 auto;
+  }
+
+  .message-list-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .message-pager {
+    flex: 0 0 68px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    height: 68px;
+    padding: 16px;
+    box-sizing: border-box;
+    border-top: 1px solid #ddd;
+  }
+
+  .message-pager a,
+  .message-pager span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 8px;
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    text-decoration: none;
+    color: inherit;
+    background: white;
+  }
+
+  .message-pager .current {
+    font-weight: 700;
+    border-color: currentColor;
+  }
+
+  .message-pager .disabled {
+    opacity: 0.45;
+  }
 </style>
+
 
 <div id="message-warning" class="message-warning">
   쪽지 내용을 입력해주세요.
 </div>
+
+
+{% for msg in messages %}
+  {% if "success" in msg.tags %}
+    <div class="message-success">
+      {{ msg }}
+    </div>
+  {% endif %}
+{% endfor %}
+
 
 <div class="head">
   <div>
@@ -41,9 +130,10 @@
   </div>
 </div>
 
+
 <div class="mail">
 
-  <div class="panel">
+  <div class="panel message-list-panel">
 
     <div class="tabs">
 
@@ -63,100 +153,118 @@
 
     </div>
 
-    {% if current_tab == "received" %}
 
-      {% for message in received_messages %}
+    <div class="message-list-body">
 
-        <a href="{% url 'message_detail' message.message_id %}">
-          <div class="mail-item {% if not message.is_read %}unread{% endif %}">
+      {% if current_tab == "received" %}
 
-            <div class="mail-top">
+        {% for message in message_page %}
 
-              <b>{{ message.sender.member_name }}</b>
+          <a href="{% url 'message_detail' message.message_id %}">
+            <div class="mail-item {% if not message.is_read %}unread{% endif %}">
 
-              {% if message.sender.user_type %}
-                {% if message.sender.user_type.type_name == "멘토" %}
-                  <span class="tag answer">
-                    {{ message.sender.user_type.type_name }}
-                  </span>
-                {% elif message.sender.user_type.type_name == "직원" %}
-                  <span class="tag notice">
-                    {{ message.sender.user_type.type_name }}
-                  </span>
-                {% else %}
-                  <span class="tag">
-                    {{ message.sender.user_type.type_name }}
-                  </span>
+              <div class="mail-top">
+
+                <b>{{ message.sender.member_name }}</b>
+
+                {% if message.sender.user_type %}
+                  {% if message.sender.user_type.type_name == "멘토" %}
+                    <span class="tag answer">{{ message.sender.user_type.type_name }}</span>
+                  {% elif message.sender.user_type.type_name == "직원" %}
+                    <span class="tag notice">{{ message.sender.user_type.type_name }}</span>
+                  {% else %}
+                    <span class="tag">{{ message.sender.user_type.type_name }}</span>
+                  {% endif %}
                 {% endif %}
-              {% endif %}
 
-              <time>{{ message.sent_at|date:"H:i" }}</time>
+                <time>{{ message.sent_at|date:"H:i" }}</time>
+
+              </div>
+
+              <p>{{ message.content|truncatechars:50 }}</p>
 
             </div>
+          </a>
 
-            <p>{{ message.content|truncatechars:50 }}</p>
+        {% empty %}
 
+          <div class="pad">
+            <p>받은 쪽지가 없습니다.</p>
           </div>
-        </a>
 
-      {% empty %}
+        {% endfor %}
 
-        <div class="pad">
-          <p>받은 쪽지가 없습니다.</p>
-        </div>
+      {% else %}
 
-      {% endfor %}
+        {% for message in message_page %}
 
-    {% elif current_tab == "sent" %}
+          <a href="{% url 'message_detail' message.message_id %}">
+            <div class="mail-item">
 
-      {% for message in sent_messages %}
+              <div class="mail-top">
 
-        <a href="{% url 'message_detail' message.message_id %}">
-          <div class="mail-item">
+                <b>{{ message.receiver.member_name }}</b>
 
-            <div class="mail-top">
-
-              <b>{{ message.receiver.member_name }}</b>
-
-              {% if message.receiver.user_type %}
-                {% if message.receiver.user_type.type_name == "멘토" %}
-                  <span class="tag answer">
-                    {{ message.receiver.user_type.type_name }}
-                  </span>
-                {% elif message.receiver.user_type.type_name == "직원" %}
-                  <span class="tag notice">
-                    {{ message.receiver.user_type.type_name }}
-                  </span>
-                {% else %}
-                  <span class="tag">
-                    {{ message.receiver.user_type.type_name }}
-                  </span>
+                {% if message.receiver.user_type %}
+                  {% if message.receiver.user_type.type_name == "멘토" %}
+                    <span class="tag answer">{{ message.receiver.user_type.type_name }}</span>
+                  {% elif message.receiver.user_type.type_name == "직원" %}
+                    <span class="tag notice">{{ message.receiver.user_type.type_name }}</span>
+                  {% else %}
+                    <span class="tag">{{ message.receiver.user_type.type_name }}</span>
+                  {% endif %}
                 {% endif %}
-              {% endif %}
 
-              <time>{{ message.sent_at|date:"H:i" }}</time>
+                <time>{{ message.sent_at|date:"H:i" }}</time>
+
+              </div>
+
+              <p>{{ message.content|truncatechars:50 }}</p>
 
             </div>
+          </a>
 
-            <p>{{ message.content|truncatechars:50 }}</p>
+        {% empty %}
 
+          <div class="pad">
+            <p>보낸 쪽지가 없습니다.</p>
           </div>
-        </a>
 
-      {% empty %}
+        {% endfor %}
 
-        <div class="pad">
-          <p>보낸 쪽지가 없습니다.</p>
-        </div>
+      {% endif %}
 
+    </div>
+
+
+    <div class="message-pager">
+
+      {% if message_page.has_previous %}
+        <a href="?tab={{ current_tab }}&page={{ message_page.previous_page_number }}">이전</a>
+      {% else %}
+        <span class="disabled">이전</span>
+      {% endif %}
+
+      {% for num in message_page.paginator.page_range %}
+        {% if num == message_page.number %}
+          <span class="current">{{ num }}</span>
+        {% else %}
+          <a href="?tab={{ current_tab }}&page={{ num }}">{{ num }}</a>
+        {% endif %}
       {% endfor %}
 
-    {% endif %}
+      {% if message_page.has_next %}
+        <a href="?tab={{ current_tab }}&page={{ message_page.next_page_number }}">다음</a>
+      {% else %}
+        <span class="disabled">다음</span>
+      {% endif %}
+
+    </div>
 
   </div>
 
 
-  <div class="panel">
+  <div class="panel message-send-panel">
 
     <div class="pad">
 
@@ -169,6 +277,7 @@
       <p class="lede">
         받는 사람은 게시글이나 댓글의 이름을 눌러 고를 수 있습니다.
       </p>
+
 
       <form
         method="post"
@@ -209,6 +318,7 @@
 
         </div>
 
+
         <div class="field">
 
           <label for="m-body">내용</label>
@@ -222,6 +332,7 @@
           ></textarea>
 
         </div>
+
 
         <div class="formfoot">
 
@@ -243,12 +354,24 @@
 
 </div>
 
+
 <script>
   const messageForm = document.getElementById("message-send-form");
   const messageContent = document.getElementById("m-body");
   const warning = document.getElementById("message-warning");
+  const successMessages = document.querySelectorAll(".message-success");
 
   let warningTimer;
+
+
+  successMessages.forEach(function(successMessage) {
+    successMessage.style.display = "block";
+
+    setTimeout(function() {
+      successMessage.style.display = "none";
+    }, 2000);
+  });
+
 
   messageForm.addEventListener("submit", function(event) {
     const content = messageContent.value.trim();

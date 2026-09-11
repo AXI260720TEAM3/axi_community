@@ -3,6 +3,54 @@
 
 {% block content %}
 
+<style>
+  .message-alert {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10000;
+    font-size: 16px;
+    font-weight: 600;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 14px 20px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  }
+
+  .message-alert.success {
+    color: black;
+  }
+
+  .message-alert.error {
+    color: red;
+  }
+
+  .message-detail-content {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 140px;
+  }
+
+  .message-detail-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    margin-top: 24px;
+  }
+</style>
+
+
+{% for msg in messages %}
+  <div class="message-alert {% if 'success' in msg.tags %}success{% else %}error{% endif %}">
+    {{ msg }}
+  </div>
+{% endfor %}
+
+
 <div class="head">
   <div>
     <div class="crumb">내 활동</div>
@@ -10,20 +58,25 @@
   </div>
 </div>
 
+
 <div class="panel">
 
   <div class="pad">
 
     <div class="mail-top">
 
-      {% if message.sender == request.user %}
+      {% if is_sender %}
 
         <b>{{ message.receiver.member_name }}</b>
 
         {% if message.receiver.user_type %}
-          <span class="tag answer">
-            {{ message.receiver.user_type.type_name }}
-          </span>
+          {% if message.receiver.user_type.type_name == "멘토" %}
+            <span class="tag answer">{{ message.receiver.user_type.type_name }}</span>
+          {% elif message.receiver.user_type.type_name == "직원" %}
+            <span class="tag notice">{{ message.receiver.user_type.type_name }}</span>
+          {% else %}
+            <span class="tag">{{ message.receiver.user_type.type_name }}</span>
+          {% endif %}
         {% endif %}
 
       {% else %}
@@ -31,9 +84,13 @@
         <b>{{ message.sender.member_name }}</b>
 
         {% if message.sender.user_type %}
-          <span class="tag answer">
-            {{ message.sender.user_type.type_name }}
-          </span>
+          {% if message.sender.user_type.type_name == "멘토" %}
+            <span class="tag answer">{{ message.sender.user_type.type_name }}</span>
+          {% elif message.sender.user_type.type_name == "직원" %}
+            <span class="tag notice">{{ message.sender.user_type.type_name }}</span>
+          {% else %}
+            <span class="tag">{{ message.sender.user_type.type_name }}</span>
+          {% endif %}
         {% endif %}
 
       {% endif %}
@@ -44,72 +101,187 @@
 
     </div>
 
-    <div class="field">
 
-      <label>내용</label>
+    {% if can_edit_delete %}
 
-      <div class="control">
-        {{ message.content|linebreaksbr }}
+      <form method="post" id="message-edit-form">
+        {% csrf_token %}
+
+        <div class="field">
+
+          <label for="message-edit-content">내용</label>
+
+          <textarea
+            id="message-edit-content"
+            class="control message-detail-content"
+            name="content"
+            rows="7"
+          >{{ message.content }}</textarea>
+
+        </div>
+
+
+        <div class="field">
+
+          <label>읽음 상태</label>
+          <p>읽지 않음</p>
+
+        </div>
+
+
+        <div class="message-detail-actions">
+
+          <button
+            type="submit"
+            class="btn quiet"
+            name="action"
+            value="edit"
+          >
+            수정
+          </button>
+
+          <button
+            type="submit"
+            class="btn quiet"
+            name="action"
+            value="delete"
+            formnovalidate
+            onclick="return confirm('이 쪽지를 삭제하시겠습니까? 삭제하면 상대방의 받은 쪽지함에서도 사라집니다.');"
+          >
+            삭제
+          </button>
+
+          <a
+            href="{% url 'message_box' %}?tab=sent"
+            class="btn"
+          >
+            쪽지함으로
+          </a>
+
+        </div>
+
+      </form>
+
+
+    {% elif is_sender %}
+
+      <div class="field">
+
+        <label>내용</label>
+
+        <div class="control message-detail-content">
+          {{ message.content|linebreaksbr }}
+        </div>
+
       </div>
 
-    </div>
-
-    {% if message.sender == request.user %}
 
       <div class="field">
 
         <label>읽음 상태</label>
 
         {% if message.read_at %}
-          <p>
-            읽음 · {{ message.read_at|date:"Y.m.d H:i" }}
-          </p>
+          <p>읽음 · {{ message.read_at|date:"Y.m.d H:i" }}</p>
         {% else %}
-          <p>
-            읽지 않음
-          </p>
+          <p>읽지 않음</p>
         {% endif %}
 
       </div>
+
+
+      <div class="message-detail-actions">
+
+        <a
+          href="{% url 'message_box' %}?tab=sent"
+          class="btn"
+        >
+          쪽지함으로
+        </a>
+
+      </div>
+
 
     {% else %}
 
       <div class="field">
 
-        <label>읽음 상태</label>
+        <label>내용</label>
 
-        <p>
-          읽음 · {{ message.read_at|date:"Y.m.d H:i" }}
-        </p>
+        <div class="control message-detail-content">
+          {{ message.content|linebreaksbr }}
+        </div>
+
+      </div>
+
+
+      <div class="field">
+
+        <label>읽음 상태</label>
+        <p>읽음 · {{ message.read_at|date:"Y.m.d H:i" }}</p>
+
+      </div>
+
+
+      <div class="message-detail-actions">
+
+        <a
+          href="{% url 'message_box' %}?receiver={{ message.sender.username }}"
+          class="btn quiet"
+        >
+          답장하기
+        </a>
+
+        <a
+          href="{% url 'message_box' %}?tab=received"
+          class="btn"
+        >
+          쪽지함으로
+        </a>
 
       </div>
 
     {% endif %}
 
-    <div class="formfoot">
-
-      <a
-        href="{% url 'message_box' %}"
-        class="btn"
-      >
-        쪽지함으로
-      </a>
-
-      {% if message.receiver == request.user %}
-
-        <a
-          href="{% url 'message_box' %}?receiver={{ message.sender.username }}"
-          class="btn"
-        >
-          답장하기
-        </a>
-
-      {% endif %}
-
-    </div>
-
   </div>
 
 </div>
+
+
+<script>
+  const alertMessages = document.querySelectorAll(".message-alert");
+  const editForm = document.getElementById("message-edit-form");
+  const editContent = document.getElementById("message-edit-content");
+
+
+  alertMessages.forEach(function(alertMessage) {
+    alertMessage.style.display = "block";
+
+    setTimeout(function() {
+      alertMessage.style.display = "none";
+    }, 2000);
+  });
+
+
+  if (editForm && editContent) {
+    editForm.addEventListener("submit", function(event) {
+      const action = event.submitter ? event.submitter.value : "";
+
+      if (action === "edit" && !editContent.value.trim()) {
+        event.preventDefault();
+
+        const warning = document.createElement("div");
+        warning.className = "message-alert error";
+        warning.textContent = "쪽지 내용을 입력해주세요.";
+
+        document.body.appendChild(warning);
+        warning.style.display = "block";
+
+        setTimeout(function() {
+          warning.remove();
+        }, 2000);
+      }
+    });
+  }
+</script>
 
 {% endblock %}

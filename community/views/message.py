@@ -5,9 +5,14 @@
 쪽지를 열어볼 때 read_at 에 현재 시각을 넣으세요. 사이드바의 안 읽은 개수가 줄어듭니다.
 """
 
+"""
+[C] 쪽지
+"""
+
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -16,46 +21,40 @@ from ..models import Message
 
 User = get_user_model()
 
+MESSAGE_PAGE_SIZE = 5
+
 
 @login_required
 def message_box(request):
-    """
-    받은 쪽지 / 보낸 쪽지를 보여주는 화면입니다.
+    current_tab = request.GET.get("tab", "received")
 
-    또한 게시글이나 댓글에서 사용자의 이름을 클릭하여
-    쪽지를 보내는 경우를 지원합니다.
-
-    예:
-        /messages/?receiver=user123
-
-    위와 같이 receiver가 URL 파라미터로 전달되면
-    해당 사용자를 찾아서 쪽지 보내기 화면의
-    '받는 사람'으로 미리 선택합니다.
-    """
-
-    received_messages = (
-        Message.objects
-        .filter(receiver=request.user)
-        .select_related("sender")
-        .order_by("-sent_at")
-    )
-
-    sent_messages = (
-        Message.objects
-        .filter(sender=request.user)
-        .select_related("receiver")
-        .order_by("-sent_at")
-    )
+    if current_tab not in ("received", "sent"):
+        current_tab = "received"
 
     unread_count = Message.objects.filter(
         receiver=request.user,
         read_at__isnull=True,
     ).count()
 
-    current_tab = request.GET.get(
-        "tab",
-        "received",
-    )
+    if current_tab == "sent":
+        messages_queryset = (
+            Message.objects
+            .filter(sender=request.user)
+            .select_related("receiver", "receiver__user_type")
+            .order_by("-sent_at")
+        )
+    else:
+        messages_queryset = (
+            Message.objects
+            .filter(receiver=request.user)
+            .select_related("sender", "sender__user_type")
+            .order_by("-sent_at")
+        )
+
+    message_page = Paginator(
+        messages_queryset,
+        MESSAGE_PAGE_SIZE,
+    ).get_page(request.GET.get("page"))
 
     receiver_login_id = request.GET.get(
         "receiver",
@@ -75,7 +74,6 @@ def message_box(request):
                 request,
                 "자기 자신에게는 쪽지를 보낼 수 없습니다.",
             )
-
             selected_receiver = None
 
     return render(
@@ -83,8 +81,7 @@ def message_box(request):
         "message/box.html",
         {
             "nav_current": "message",
-            "received_messages": received_messages,
-            "sent_messages": sent_messages,
+            "message_page": message_page,
             "unread_count": unread_count,
             "current_tab": current_tab,
             "selected_receiver": selected_receiver,
@@ -94,33 +91,89 @@ def message_box(request):
 
 @login_required
 def message_detail(request, message_id):
-    """
-    쪽지 하나를 상세하게 보여줍니다.
-
-    받은 쪽지를 처음 열었을 때
-    read_at에 현재 시간을 저장하여 읽음 처리합니다.
-
-    보낸 사람 또는 받은 사람 본인만
-    해당 쪽지를 볼 수 있습니다.
-    """
-
     message = get_object_or_404(
-        Message,
+        Message.objects.select_related(
+            "sender",
+            "sender__user_type",
+            "receiver",
+            "receiver__user_type",
+        ),
         pk=message_id,
     )
 
-    if message.receiver == request.user:
-        if message.read_at is None:
-            message.read_at = timezone.now()
-            message.save(
-                update_fields=["read_at"]
+    is_sender = message.sender == request.user
+    is_receiver = message.receiver == request.user
+
+    if not is_sender and not is_receiver:
+        return redirect("message_box")
+
+    if is_receiver and message.read_at is None:
+        message.read_at = timezone.now()
+        message.save(update_fields=["read_at"])
+
+    can_edit_delete = is_sender and message.read_at is None
+
+    if request.method == "POST":
+        if not is_sender:
+            messages.error(
+                request,
+                "받은 쪽지는 수정하거나 삭제할 수 없습니다.",
+            )
+            return redirect(
+                "message_detail",
+                message_id=message.message_id,
             )
 
-    elif message.sender == request.user:
-        pass
+        if message.read_at is not None:
+            messages.error(
+                request,
+                "상대방이 이미 읽은 쪽지는 수정하거나 삭제할 수 없습니다.",
+            )
+            return redirect(
+                "message_detail",
+                message_id=message.message_id,
+            )
 
-    else:
-        return redirect("message_box")
+        action = request.POST.get("action", "").strip()
+
+        if action == "edit":
+            content = request.POST.get(
+                "content",
+                "",
+            ).strip()
+
+            if not content:
+                messages.error(
+                    request,
+                    "쪽지 내용을 입력해주세요.",
+                )
+                return redirect(
+                    "message_detail",
+                    message_id=message.message_id,
+                )
+
+            message.content = content
+            message.save(update_fields=["content"])
+
+            messages.success(
+                request,
+                "쪽지를 수정했습니다.",
+            )
+
+            return redirect(
+                "message_detail",
+                message_id=message.message_id,
+            )
+
+        if action == "delete":
+            message.delete()
+
+            messages.success(
+                request,
+                "쪽지를 삭제했습니다.",
+            )
+
+            return redirect("message_box")
 
     return render(
         request,
@@ -128,28 +181,15 @@ def message_detail(request, message_id):
         {
             "nav_current": "message",
             "message": message,
+            "is_sender": is_sender,
+            "is_receiver": is_receiver,
+            "can_edit_delete": can_edit_delete,
         },
     )
 
 
 @login_required
 def message_send(request):
-    """
-    쪽지를 보내는 기능입니다.
-
-    받는 사람은 두 가지 방법으로 지정할 수 있습니다.
-
-    1. 게시글/댓글의 사용자 이름을 클릭
-       -> message_box에서 받는 사람을 미리 선택
-       -> box.html의 form에서 receiver 값을 POST
-
-    2. 쪽지함에서 직접 받는 사람의 login_id 입력
-       -> receiver 값을 POST
-
-    views.py에서는 Member 모델의 Django 필드명인
-    username을 사용합니다.
-    """
-
     if request.method != "POST":
         return redirect("message_box")
 
@@ -168,7 +208,6 @@ def message_send(request):
             request,
             "받는 사람을 선택해주세요.",
         )
-
         return redirect("message_box")
 
     if not content:
@@ -176,7 +215,6 @@ def message_send(request):
             request,
             "쪽지 내용을 입력해주세요.",
         )
-
         return redirect("message_box")
 
     receiver = get_object_or_404(
@@ -189,7 +227,6 @@ def message_send(request):
             request,
             "자기 자신에게는 쪽지를 보낼 수 없습니다.",
         )
-
         return redirect("message_box")
 
     Message.objects.create(

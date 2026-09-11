@@ -2,6 +2,7 @@
 {% block title %}Q&A · 모두의국비{% endblock %}
 
 {% block content %}
+
 <div class="head">
   <div>
     <div class="crumb">게시판</div>
@@ -38,31 +39,72 @@
       <th class="col-date">작성일</th>
     </tr>
   </thead>
+
   <tbody>
     {% for q in page %}
       <tr>
         <td class="col-no">{{ q.post_id }}</td>
+
         <td class="subject">
-          <a href="{% url 'qna_detail' q.post_id %}">{{ q.title }}</a>
-          {% if q.answer_count == 0 %}<span class="tag open">답변 대기</span>{% endif %}
+          <a href="{% url 'qna_detail' q.post_id %}">
+            {{ q.title }}
+          </a>
+
+          {% if q.answer_count == 0 %}
+            <span class="tag open">답변 대기</span>
+          {% endif %}
         </td>
+
         <td class="col-writer">
-          <a class="writer message-open" href="#" data-receiver="{{ q.writer.username }}" data-name="{{ q.writer.member_name }}">{{ q.writer.member_name }}</a>
+          {% if user.is_authenticated %}
+            <a
+              class="writer message-open"
+              href="#"
+              data-receiver="{{ q.writer.username }}"
+              data-name="{{ q.writer.member_name }}"
+            >
+              {{ q.writer.member_name }}
+            </a>
+          {% else %}
+            <span class="writer">
+              {{ q.writer.member_name }}
+            </span>
+          {% endif %}
         </td>
+
         <td class="col-date">{{ q.created_at|date:"m-d" }}</td>
       </tr>
 
       {% for a in q.visible_answers %}
         <tr>
           <td class="col-no"></td>
+
           <td class="subject">
             <span class="reply-mark">&#8627;</span>
             <span class="tag answer">답변</span>
-            <a href="{% url 'qna_detail' q.post_id %}">{{ a.title }}</a>
+
+            <a href="{% url 'qna_detail' q.post_id %}">
+              {{ a.title }}
+            </a>
           </td>
+
           <td class="col-writer">
-            <a class="writer message-open" href="#" data-receiver="{{ a.writer.username }}" data-name="{{ a.writer.member_name }}">{{ a.writer.member_name }}</a>
+            {% if user.is_authenticated %}
+              <a
+                class="writer message-open"
+                href="#"
+                data-receiver="{{ a.writer.username }}"
+                data-name="{{ a.writer.member_name }}"
+              >
+                {{ a.writer.member_name }}
+              </a>
+            {% else %}
+              <span class="writer">
+                {{ a.writer.member_name }}
+              </span>
+            {% endif %}
           </td>
+
           <td class="col-date">{{ a.created_at|date:"m-d" }}</td>
         </tr>
       {% endfor %}
@@ -100,7 +142,12 @@
   {% endif %}
 </div>
 
-<div class="note">질문은 수강생이, 답변은 멘토가 씁니다. 답변도 게시글로 저장되고 원 질문을 가리킵니다.</div>
+<div class="note">
+  질문은 수강생이, 답변은 멘토가 씁니다. 답변도 게시글로 저장되고 원 질문을 가리킵니다.
+</div>
+
+
+{% if user.is_authenticated %}
 
 <style>
   .message-modal {
@@ -184,29 +231,73 @@
 </div>
 
 <div id="message-modal" class="message-modal" aria-hidden="true">
-  <div class="message-modal-box" role="dialog" aria-modal="true" aria-labelledby="message-modal-title">
-    <button type="button" class="message-modal-close" id="message-modal-close" aria-label="쪽지 창 닫기">&times;</button>
+  <div
+    class="message-modal-box"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="message-modal-title"
+  >
+    <button
+      type="button"
+      class="message-modal-close"
+      id="message-modal-close"
+      aria-label="쪽지 창 닫기"
+    >
+      &times;
+    </button>
+
     <h2 id="message-modal-title">쪽지 보내기</h2>
 
-    <form id="message-modal-form" method="post" action="{% url 'message_send' %}">
+    <form
+      id="message-modal-form"
+      method="post"
+      action="{% url 'message_send' %}"
+    >
       {% csrf_token %}
 
       <div class="field">
         <label for="message-receiver-name">받는 사람</label>
-        <input id="message-receiver-name" class="control readonly" type="text" readonly>
-        <input id="message-receiver" type="hidden" name="receiver">
+
+        <input
+          id="message-receiver-name"
+          class="control readonly"
+          type="text"
+          readonly
+        >
+
+        <input
+          id="message-receiver"
+          type="hidden"
+          name="receiver"
+        >
       </div>
 
       <div class="field">
         <label for="message-content">내용</label>
-        <textarea id="message-content" class="control" name="content" rows="7" placeholder="쪽지 내용을 입력하세요"></textarea>
+
+        <textarea
+          id="message-content"
+          class="control"
+          name="content"
+          rows="7"
+          placeholder="쪽지 내용을 입력하세요"
+        ></textarea>
       </div>
 
       <p id="message-result" class="message-result"></p>
 
       <div class="message-modal-actions">
-        <button type="button" class="btn quiet" id="message-modal-cancel">취소</button>
-        <button class="btn" type="submit">보내기</button>
+        <button
+          type="button"
+          class="btn quiet"
+          id="message-modal-cancel"
+        >
+          취소
+        </button>
+
+        <button class="btn" type="submit">
+          보내기
+        </button>
       </div>
     </form>
   </div>
@@ -233,6 +324,7 @@ document.addEventListener("DOMContentLoaded", function () {
     result.textContent = "";
     result.style.display = "none";
     warning.style.display = "none";
+
     modal.classList.add("open");
     modal.setAttribute("aria-hidden", "false");
     content.focus();
@@ -241,6 +333,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function closeMessageModal() {
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden", "true");
+
     warning.style.display = "none";
     clearTimeout(warningTimer);
   }
@@ -262,7 +355,10 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape" && modal.classList.contains("open")) {
+    if (
+      event.key === "Escape"
+      && modal.classList.contains("open")
+    ) {
       closeMessageModal();
     }
   });
@@ -284,7 +380,10 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    const submitButton = form.querySelector('button[type="submit"]');
+    const submitButton = form.querySelector(
+      'button[type="submit"]'
+    );
+
     submitButton.disabled = true;
 
     result.textContent = "쪽지를 보내는 중입니다.";
@@ -295,7 +394,9 @@ document.addEventListener("DOMContentLoaded", function () {
         method: "POST",
         body: new FormData(form),
         credentials: "same-origin",
-        headers: {"X-Requested-With": "XMLHttpRequest"}
+        headers: {
+          "X-Requested-With": "XMLHttpRequest"
+        }
       });
 
       if (!response.ok) {
@@ -303,10 +404,15 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       result.textContent = "쪽지를 보냈습니다.";
-      setTimeout(closeMessageModal, 700);
+
+      setTimeout(
+        closeMessageModal,
+        700
+      );
 
     } catch (error) {
-      result.textContent = "쪽지를 보내지 못했습니다. 다시 시도해주세요.";
+      result.textContent =
+        "쪽지를 보내지 못했습니다. 다시 시도해주세요.";
 
     } finally {
       submitButton.disabled = false;
@@ -314,4 +420,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 </script>
+
+{% endif %}
+
 {% endblock %}

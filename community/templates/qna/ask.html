@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}질문하기 · 모두의국비{% endblock %}
 
 {% block content %}
@@ -39,35 +40,27 @@
 
   .qna-warning {
     display: none;
-
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-
     z-index: 10000;
-
     color: red;
     font-size: 16px;
     font-weight: 600;
-
     background: white;
     border: 1px solid #ddd;
     border-radius: 8px;
-
     padding: 14px 20px;
-
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
   }
 </style>
-
 
 <div class="head">
   <div>
     <div class="crumb">
       <a href="{% url 'qna_list' %}">Q&amp;A</a> · 질문 작성
     </div>
-
     <h1>질문하기</h1>
   </div>
 
@@ -76,17 +69,18 @@
   </a>
 </div>
 
-
 <div id="qna-warning" class="qna-warning">
   제목과 내용을 입력해주세요.
 </div>
 
-
 <div class="panel qna-ask-panel">
 
-  <form method="post" id="qna-ask-form">
+  <form
+    method="post"
+    enctype="multipart/form-data"
+    id="qna-ask-form"
+  >
     {% csrf_token %}
-
 
     <div class="field">
       <label for="id_title">제목</label>
@@ -102,7 +96,6 @@
       >
     </div>
 
-
     <div class="field">
       <label for="id_content">내용</label>
 
@@ -115,29 +108,39 @@
       >{{ content|default:'' }}</textarea>
     </div>
 
+    <div class="field">
+      <label>
+        첨부파일
+        <span class="hint">여러 개 올릴 수 있습니다</span>
+      </label>
+
+      <input
+        type="file"
+        id="w-files"
+        name="files"
+        multiple
+        hidden
+      >
+
+      <div class="dropzone" id="dropzone">
+        파일을 끌어다 놓거나 클릭해서 고르세요
+      </div>
+
+      <div class="attached" id="file-list"></div>
+    </div>
 
     <div class="row">
-
-      <a
-        class="btn quiet"
-        href="{% url 'qna_list' %}"
-      >
+      <a class="btn quiet" href="{% url 'qna_list' %}">
         취소
       </a>
 
-      <button
-        class="btn"
-        type="submit"
-      >
+      <button class="btn" type="submit">
         등록
       </button>
-
     </div>
 
   </form>
-
 </div>
-
 
 <script>
   const qnaForm = document.getElementById("qna-ask-form");
@@ -148,12 +151,10 @@
   let warningTimer;
 
   qnaForm.addEventListener("submit", function(event) {
-
     const title = titleInput.value.trim();
     const content = contentInput.value.trim();
 
     if (!title || !content) {
-
       event.preventDefault();
 
       warning.style.display = "block";
@@ -164,8 +165,9 @@
         warning.style.display = "none";
       }, 2000);
     }
-
   });
 </script>
+
+<script src="{% static 'community/js/dropzone.js' %}"></script>
 
 {% endblock %}

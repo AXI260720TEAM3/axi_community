@@ -3,6 +3,208 @@
 
 {% block content %}
 
+<style>
+  .qna-alert {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10000;
+    font-size: 16px;
+    font-weight: 600;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 14px 20px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  }
+
+  .qna-alert.success {
+    color: black;
+  }
+
+  .qna-alert.error {
+    color: red;
+  }
+
+  .qna-detail-panel {
+    overflow: hidden;
+  }
+
+  .qna-detail-panel .post-head {
+    padding: 24px;
+  }
+
+  .qna-detail-panel .post-body {
+    padding: 24px;
+    min-height: 110px;
+  }
+
+  .qna-attachments {
+    padding: 16px 24px;
+    border-top: 1px solid #ddd;
+  }
+
+  .qna-attachments-title {
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .qna-attachment-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 7px 0;
+  }
+
+  .qna-attachment-row a {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .qna-attachment-size {
+    flex: 0 0 auto;
+    color: #666;
+    font-size: 14px;
+  }
+
+  .qna-owner-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 24px;
+    border-top: 1px solid #ddd;
+  }
+
+  .qna-owner-actions form {
+    margin: 0;
+  }
+
+  .qna-edit-form {
+    display: none;
+    padding: 20px 24px 24px;
+    border-top: 1px solid #ddd;
+  }
+
+  .qna-edit-form.open {
+    display: block;
+  }
+
+  .qna-edit-form .field {
+    margin-top: 16px;
+  }
+
+  .qna-edit-form .field:first-child {
+    margin-top: 0;
+  }
+
+  .qna-edit-form .control {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .qna-edit-form input.control,
+  .qna-edit-form textarea.control {
+    padding: 12px 14px;
+  }
+
+  .qna-edit-form .formfoot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .qna-answer-panel {
+    margin-top: 18px;
+  }
+
+  .message-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.45);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .message-modal.open {
+    display: flex;
+  }
+
+  .message-modal-box {
+    position: relative;
+    width: min(460px, 100%);
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+
+  .message-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    border: 0;
+    background: transparent;
+    font-size: 28px;
+    cursor: pointer;
+  }
+
+  .message-modal-box .field {
+    margin-top: 16px;
+  }
+
+  .message-modal-box .control {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .message-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .message-result {
+    display: none;
+    margin-top: 12px;
+  }
+
+  .message-warning {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10000;
+    color: red;
+    font-size: 16px;
+    font-weight: 600;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 14px 20px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  }
+</style>
+
+
+{% for msg in messages %}
+  <div class="qna-alert {% if 'success' in msg.tags %}success{% else %}error{% endif %}">
+    {{ msg }}
+  </div>
+{% endfor %}
+
+
 <div class="head">
   <div class="crumb">
     <a href="{% url 'qna_list' %}">Q&amp;A</a> · 질문
@@ -14,9 +216,10 @@
 </div>
 
 
-<article class="panel">
+<article class="panel qna-detail-panel">
 
   <div class="post-head">
+
     <h1>{{ question.title }}</h1>
 
     <div class="post-meta">
@@ -39,39 +242,144 @@
 
       <span>{{ question.created_at|date:"Y년 n월 j일 H:i" }}</span>
 
+      {% if attachments %}
+        <span>첨부 {{ attachments|length }}</span>
+      {% endif %}
+
       {% if question.updated_at %}
         <span>수정됨</span>
       {% endif %}
     </div>
+
   </div>
+
 
   <div class="post-body">
     {{ question.content|linebreaks }}
   </div>
 
+
   {% if attachments %}
-    <div class="attach-list">
+    <div class="qna-attachments">
+
+      <div class="qna-attachments-title">
+        첨부파일
+      </div>
+
       {% for f in attachments %}
-        <a href="{% url 'attachment_download' f.attachment_id %}">
-          {{ f.origin_name }}
-        </a>
+        <div class="qna-attachment-row">
+          <a href="{% url 'attachment_download' f.attachment_id %}">
+            {{ f.origin_name }}
+          </a>
+
+          <span class="qna-attachment-size">
+            {{ f.file_size|filesizeformat }}
+          </span>
+        </div>
       {% endfor %}
+
     </div>
+  {% endif %}
+
+
+  {% if is_owner %}
+    <div class="qna-owner-actions">
+
+      <button
+        type="button"
+        class="btn quiet"
+        id="qna-edit-open"
+      >
+        수정
+      </button>
+
+      <form
+        method="post"
+        onsubmit="return confirm('이 질문을 삭제하시겠습니까?');"
+      >
+        {% csrf_token %}
+
+        <button
+          type="submit"
+          class="btn quiet"
+          name="action"
+          value="delete"
+        >
+          삭제
+        </button>
+      </form>
+
+    </div>
+
+
+    <form
+      method="post"
+      class="qna-edit-form"
+      id="qna-edit-form"
+    >
+      {% csrf_token %}
+
+      <div class="field">
+        <label for="qna-edit-title">제목</label>
+
+        <input
+          id="qna-edit-title"
+          class="control"
+          type="text"
+          name="title"
+          maxlength="250"
+          value="{{ question.title }}"
+        >
+      </div>
+
+      <div class="field">
+        <label for="qna-edit-content">내용</label>
+
+        <textarea
+          id="qna-edit-content"
+          class="control"
+          name="content"
+          rows="10"
+        >{{ question.content }}</textarea>
+      </div>
+
+      <div class="formfoot">
+        <button
+          type="button"
+          class="btn quiet"
+          id="qna-edit-cancel"
+        >
+          취소
+        </button>
+
+        <button
+          type="submit"
+          class="btn"
+          name="action"
+          value="edit"
+        >
+          수정 완료
+        </button>
+      </div>
+
+    </form>
   {% endif %}
 
 </article>
 
 
-<div class="panel">
+<div class="panel qna-answer-panel">
 
   <div class="cmt-head">
     답변 {{ answers|length }}
   </div>
 
+
   {% for a in answers %}
     <div class="cmt">
 
       <div class="cmt-top">
+
         {% if user.is_authenticated %}
           <a
             class="message-open"
@@ -94,6 +402,7 @@
         <time>
           {{ a.created_at|date:"n월 j일 H:i" }}
         </time>
+
       </div>
 
       <h3>{{ a.title }}</h3>
@@ -101,12 +410,24 @@
       <p>{{ a.content|linebreaksbr }}</p>
 
       {% if a.attachments.all %}
-        <div class="attach-list">
+        <div class="qna-attachments">
+
+          <div class="qna-attachments-title">
+            첨부파일
+          </div>
+
           {% for f in a.attachments.all %}
-            <a href="{% url 'attachment_download' f.attachment_id %}">
-              {{ f.origin_name }}
-            </a>
+            <div class="qna-attachment-row">
+              <a href="{% url 'attachment_download' f.attachment_id %}">
+                {{ f.origin_name }}
+              </a>
+
+              <span class="qna-attachment-size">
+                {{ f.file_size|filesizeformat }}
+              </span>
+            </div>
           {% endfor %}
+
         </div>
       {% endif %}
 
@@ -171,83 +492,6 @@
 
 {% if user.is_authenticated %}
 
-<style>
-  .message-modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background: rgba(0, 0, 0, 0.45);
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-
-  .message-modal.open {
-    display: flex;
-  }
-
-  .message-modal-box {
-    position: relative;
-    width: min(460px, 100%);
-    max-height: 90vh;
-    overflow-y: auto;
-    background: #fff;
-    border-radius: 12px;
-    padding: 24px;
-    box-sizing: border-box;
-  }
-
-  .message-modal-close {
-    position: absolute;
-    top: 12px;
-    right: 14px;
-    border: 0;
-    background: transparent;
-    font-size: 28px;
-    line-height: 1;
-    cursor: pointer;
-  }
-
-  .message-modal-box .field {
-    margin-top: 16px;
-  }
-
-  .message-modal-box .control {
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .message-modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 16px;
-  }
-
-  .message-result {
-    display: none;
-    margin-top: 12px;
-  }
-
-  .message-warning {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 10000;
-    color: red;
-    font-size: 16px;
-    font-weight: 600;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 14px 20px;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
-  }
-</style>
-
 <div id="message-warning" class="message-warning">
   쪽지 내용을 입력해주세요.
 </div>
@@ -259,6 +503,7 @@
     aria-modal="true"
     aria-labelledby="message-modal-title"
   >
+
     <button
       type="button"
       class="message-modal-close"
@@ -268,7 +513,9 @@
       &times;
     </button>
 
-    <h2 id="message-modal-title">쪽지 보내기</h2>
+    <h2 id="message-modal-title">
+      쪽지 보내기
+    </h2>
 
     <form
       id="message-modal-form"
@@ -322,8 +569,68 @@
         </button>
       </div>
     </form>
+
   </div>
 </div>
+
+{% endif %}
+
+
+<script>
+  const qnaAlerts = document.querySelectorAll(".qna-alert");
+
+  qnaAlerts.forEach(function(alertMessage) {
+    alertMessage.style.display = "block";
+
+    setTimeout(function() {
+      alertMessage.style.display = "none";
+    }, 2000);
+  });
+
+  const editOpenButton = document.getElementById("qna-edit-open");
+  const editCancelButton = document.getElementById("qna-edit-cancel");
+  const editForm = document.getElementById("qna-edit-form");
+  const editTitle = document.getElementById("qna-edit-title");
+  const editContent = document.getElementById("qna-edit-content");
+
+  if (editOpenButton && editForm) {
+    editOpenButton.addEventListener("click", function() {
+      editForm.classList.add("open");
+      editTitle.focus();
+    });
+  }
+
+  if (editCancelButton && editForm) {
+    editCancelButton.addEventListener("click", function() {
+      editForm.classList.remove("open");
+    });
+  }
+
+  if (editForm) {
+    editForm.addEventListener("submit", function(event) {
+      if (
+        !editTitle.value.trim()
+        || !editContent.value.trim()
+      ) {
+        event.preventDefault();
+
+        const warning = document.createElement("div");
+        warning.className = "qna-alert error";
+        warning.textContent = "제목과 내용을 모두 입력해주세요.";
+
+        document.body.appendChild(warning);
+        warning.style.display = "block";
+
+        setTimeout(function() {
+          warning.remove();
+        }, 2000);
+      }
+    });
+  }
+</script>
+
+
+{% if user.is_authenticated %}
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -360,8 +667,8 @@ document.addEventListener("DOMContentLoaded", function () {
     clearTimeout(warningTimer);
   }
 
-  document.querySelectorAll(".message-open").forEach(function (link) {
-    link.addEventListener("click", function (event) {
+  document.querySelectorAll(".message-open").forEach(function(link) {
+    link.addEventListener("click", function(event) {
       event.preventDefault();
       openMessageModal(link);
     });
@@ -370,13 +677,13 @@ document.addEventListener("DOMContentLoaded", function () {
   closeButton.addEventListener("click", closeMessageModal);
   cancelButton.addEventListener("click", closeMessageModal);
 
-  modal.addEventListener("click", function (event) {
+  modal.addEventListener("click", function(event) {
     if (event.target === modal) {
       closeMessageModal();
     }
   });
 
-  document.addEventListener("keydown", function (event) {
+  document.addEventListener("keydown", function(event) {
     if (
       event.key === "Escape"
       && modal.classList.contains("open")
@@ -385,7 +692,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  form.addEventListener("submit", async function (event) {
+  form.addEventListener("submit", async function(event) {
     event.preventDefault();
 
     const messageContent = content.value.trim();
@@ -395,7 +702,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       clearTimeout(warningTimer);
 
-      warningTimer = setTimeout(function () {
+      warningTimer = setTimeout(function() {
         warning.style.display = "none";
       }, 2000);
 
@@ -435,7 +742,6 @@ document.addEventListener("DOMContentLoaded", function () {
     } catch (error) {
       result.textContent =
         "쪽지를 보내지 못했습니다. 다시 시도해주세요.";
-
     } finally {
       submitButton.disabled = false;
     }

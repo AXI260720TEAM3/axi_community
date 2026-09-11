@@ -4,6 +4,35 @@
 
 {% block content %}
 
+<style>
+  .message-warning {
+    display: none;
+
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    z-index: 10000;
+
+    color: red;
+    font-size: 16px;
+    font-weight: 600;
+
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+
+    padding: 14px 20px;
+
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  }
+</style>
+
+<div id="message-warning" class="message-warning">
+  쪽지 내용을 입력해주세요.
+</div>
+
 <div class="head">
   <div>
     <div class="crumb">내 활동</div>
@@ -39,7 +68,6 @@
       {% for message in received_messages %}
 
         <a href="{% url 'message_detail' message.message_id %}">
-
           <div class="mail-item {% if not message.is_read %}unread{% endif %}">
 
             <div class="mail-top">
@@ -47,24 +75,19 @@
               <b>{{ message.sender.member_name }}</b>
 
               {% if message.sender.user_type %}
-
                 {% if message.sender.user_type.type_name == "멘토" %}
                   <span class="tag answer">
                     {{ message.sender.user_type.type_name }}
                   </span>
-
                 {% elif message.sender.user_type.type_name == "직원" %}
                   <span class="tag notice">
                     {{ message.sender.user_type.type_name }}
                   </span>
-
                 {% else %}
                   <span class="tag">
                     {{ message.sender.user_type.type_name }}
                   </span>
-
                 {% endif %}
-
               {% endif %}
 
               <time>{{ message.sent_at|date:"H:i" }}</time>
@@ -74,7 +97,6 @@
             <p>{{ message.content|truncatechars:50 }}</p>
 
           </div>
-
         </a>
 
       {% empty %}
@@ -90,7 +112,6 @@
       {% for message in sent_messages %}
 
         <a href="{% url 'message_detail' message.message_id %}">
-
           <div class="mail-item">
 
             <div class="mail-top">
@@ -98,24 +119,19 @@
               <b>{{ message.receiver.member_name }}</b>
 
               {% if message.receiver.user_type %}
-
                 {% if message.receiver.user_type.type_name == "멘토" %}
                   <span class="tag answer">
                     {{ message.receiver.user_type.type_name }}
                   </span>
-
                 {% elif message.receiver.user_type.type_name == "직원" %}
                   <span class="tag notice">
                     {{ message.receiver.user_type.type_name }}
                   </span>
-
                 {% else %}
                   <span class="tag">
                     {{ message.receiver.user_type.type_name }}
                   </span>
-
                 {% endif %}
-
               {% endif %}
 
               <time>{{ message.sent_at|date:"H:i" }}</time>
@@ -125,7 +141,6 @@
             <p>{{ message.content|truncatechars:50 }}</p>
 
           </div>
-
         </a>
 
       {% empty %}
@@ -155,8 +170,11 @@
         받는 사람은 게시글이나 댓글의 이름을 눌러 고를 수 있습니다.
       </p>
 
-      <form method="post" action="{% url 'message_send' %}">
-
+      <form
+        method="post"
+        action="{% url 'message_send' %}"
+        id="message-send-form"
+      >
         {% csrf_token %}
 
         <div class="field" style="margin-top:18px">
@@ -201,7 +219,6 @@
             name="content"
             rows="8"
             placeholder="쪽지 내용을 입력하세요"
-            required
           ></textarea>
 
         </div>
@@ -225,5 +242,29 @@
   </div>
 
 </div>
+
+<script>
+  const messageForm = document.getElementById("message-send-form");
+  const messageContent = document.getElementById("m-body");
+  const warning = document.getElementById("message-warning");
+
+  let warningTimer;
+
+  messageForm.addEventListener("submit", function(event) {
+    const content = messageContent.value.trim();
+
+    if (!content) {
+      event.preventDefault();
+
+      warning.style.display = "block";
+
+      clearTimeout(warningTimer);
+
+      warningTimer = setTimeout(function() {
+        warning.style.display = "none";
+      }, 2000);
+    }
+  });
+</script>
 
 {% endblock %}

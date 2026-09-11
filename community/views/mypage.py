@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 
-from community.models import Post, Board
+from community.models import Post, Board, Message
 
 
 @login_required
@@ -17,13 +17,19 @@ def mypage(request):
     free_post_count = my_posts.filter(board__board_name='자유게시판').count()
     qna_count = my_posts.filter(board__board_name='Q&A').count()
 
+    # 안 읽은 쪽지 수 조회 (read_at이 None/Null인 데이터)
+    unread_count = Message.objects.filter(
+        receiver=user, 
+        read_at__isnull=True
+        ).count()
+
     context = {
         'nav_current': 'mypage',
         'my_posts': my_posts,
         'free_post_count': free_post_count,
         'qna_count': qna_count,
         'comment_count': 0,
-        'unread_message_count': 0,
+        'unread_message_count': unread_count,
     }
 
     return render(request, "mypage/index.html", context)

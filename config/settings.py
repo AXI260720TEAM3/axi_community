@@ -148,7 +148,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'idskywlsgh@gmail.com'  # 발송할 본인 구글 이메일 주소
+EMAIL_HOST_USER = os.getenv('DB_EMAIL')  # 발송할 본인 구글 이메일 주소
 EMAIL_HOST_PASSWORD = 'mvez zrge fzkl irpl'  # 1단계에서 발급받은 16자리 앱 비밀번호
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 

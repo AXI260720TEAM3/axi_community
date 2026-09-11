@@ -8,3 +8,14 @@ db.sqlite3
 .idea/
 .vscode/
 Thumbs.db
+
+# 환경변수 파일 변형 (.env.txt, .env.local 등). 예시 파일만 올립니다.
+.env.*
+!.env.example
+
+# DB 덤프 (발표 준비 때 mysqldump 로 만드는 backup.sql 등). 샘플 데이터만 올립니다.
+*.sql
+!sql/seed.sql
+
+# 테스트하다 남은 임시 파일
+*.bak

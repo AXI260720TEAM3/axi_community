@@ -147,7 +147,7 @@ textarea:focus{outline:none;border-color:var(--chalk)}
 .radios input:checked + span{color:var(--chalk);font-weight:700}
 .radios label:has(input:checked){border-color:var(--chalk);background:var(--chalk-soft)}
 .dropzone{border:1.5px dashed #C3CFCA;border-radius:8px;padding:22px;text-align:center;color:var(--muted);font-size:13.5px;background:#FAFBFA;cursor:pointer}
-.dropzone:hover{border-color:var(--chalk);color:var(--chalk);background:var(--chalk-soft)}
+.dropzone:hover,.dropzone.dragover{border-color:var(--chalk);color:var(--chalk);background:var(--chalk-soft)}
 .attached{margin-top:10px}
 .attached .file .x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:0 3px}
 .attached .file .x:hover{color:var(--mark)}

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}글쓰기 · 모두의국비{% endblock %}
 
 {% comment %} ----------------------------------------------------------------
@@ -18,7 +19,7 @@
   </div>
 </div>
 
-<form class="panel pad" method="post">
+<form class="panel pad" method="post" enctype="multipart/form-data">
   {% csrf_token %}
   <div class="field">
     <label for="w-board">게시판</label>
@@ -36,11 +37,9 @@
   </div>
   <div class="field">
     <label>첨부파일 <span class="hint">여러 개 올릴 수 있습니다</span></label>
-    <div class="dropzone">파일을 끌어다 놓거나 클릭해서 고르세요</div>
-    <div class="attached">
-      <div class="file"><span class="name">알고리즘_스터디_운영안.pdf</span><span class="size">248 KB</span><button class="x" aria-label="첨부 취소">×</button></div>
-      <div class="file"><span class="name">1주차_문제목록.xlsx</span><span class="size">31 KB</span><button class="x" aria-label="첨부 취소">×</button></div>
-    </div>
+    <input type="file" id="w-files" name="files" multiple hidden>
+    <div class="dropzone" id="dropzone">파일을 끌어다 놓거나 클릭해서 고르세요</div>
+    <div class="attached" id="file-list"></div>
   </div>
   <div class="formfoot">
     <a class="btn quiet" href="{% url 'board_list' board.board_id %}">취소</a>
@@ -49,4 +48,25 @@
 </form>
 
 
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'community/js/dropzone.js' %}"></script>
+<script>
+(function () {
+  var title = document.getElementById("w-title");
+  var body  = document.getElementById("w-body");
+
+  title.form.addEventListener("submit", function (e) {
+    var fields = [title, body];
+    for (var i = 0; i < fields.length; i++) {
+      if (fields[i].value.trim() === "") {
+        e.preventDefault();          // 제출 취소 → 페이지가 그대로라 고른 파일도 그대로
+        fields[i].value = "";        // 공백만 있던 칸을 진짜 빈칸으로
+        fields[i].reportValidity();  // "이 입력란을 작성하세요" 말풍선 띄우기
+        return;
+      }
+    }
+  });
+})();
+</script>
 {% endblock %}

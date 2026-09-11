@@ -16,12 +16,7 @@
 
 <div class="filters">
   <div class="search">
-    <input
-      name="q"
-      value="{{ keyword }}"
-      placeholder="질문이나 답변에서 검색"
-      aria-label="Q&amp;A 검색"
-    >
+    <input name="q" value="{{ keyword }}" placeholder="질문이나 답변에서 검색" aria-label="Q&amp;A 검색">
     <button>검색</button>
   </div>
   <span class="selectish">전체</span>
@@ -36,89 +31,49 @@
       <th class="col-date">작성일</th>
     </tr>
   </thead>
-
   <tbody>
     {% for q in page %}
-
       <tr>
         <td class="col-no">{{ q.post_id }}</td>
-
         <td class="subject">
-          <a href="{% url 'qna_detail' q.post_id %}">
-            {{ q.title }}
-          </a>
-
-          {% if q.answer_count == 0 %}
-            <span class="tag open">답변 대기</span>
-          {% endif %}
+          <a href="{% url 'qna_detail' q.post_id %}">{{ q.title }}</a>
+          {% if q.answer_count == 0 %}<span class="tag open">답변 대기</span>{% endif %}
         </td>
-
         <td class="col-writer">
-          <a
-            class="writer"
-            href="{% url 'message_box' %}?receiver={{ q.writer.username }}"
-          >
-            {{ q.writer.member_name }}
-          </a>
+          <a class="writer message-open" href="#" data-receiver="{{ q.writer.username }}" data-name="{{ q.writer.member_name }}">{{ q.writer.member_name }}</a>
         </td>
-
-        <td class="col-date">
-          {{ q.created_at|date:"m-d" }}
-        </td>
+        <td class="col-date">{{ q.created_at|date:"m-d" }}</td>
       </tr>
 
-
       {% for a in q.visible_answers %}
-
         <tr>
           <td class="col-no"></td>
-
           <td class="subject">
             <span class="reply-mark">&#8627;</span>
             <span class="tag answer">답변</span>
-
-            <a href="{% url 'qna_detail' q.post_id %}">
-              {{ a.title }}
-            </a>
+            <a href="{% url 'qna_detail' q.post_id %}">{{ a.title }}</a>
           </td>
-
           <td class="col-writer">
-            <a
-              class="writer"
-              href="{% url 'message_box' %}?receiver={{ a.writer.username }}"
-            >
-              {{ a.writer.member_name }}
-            </a>
+            <a class="writer message-open" href="#" data-receiver="{{ a.writer.username }}" data-name="{{ a.writer.member_name }}">{{ a.writer.member_name }}</a>
           </td>
-
-          <td class="col-date">
-            {{ a.created_at|date:"m-d" }}
-          </td>
+          <td class="col-date">{{ a.created_at|date:"m-d" }}</td>
         </tr>
-
       {% endfor %}
 
     {% empty %}
-
       <tr>
         <td class="col-no"></td>
         <td class="subject">등록된 질문이 없습니다.</td>
         <td class="col-writer"></td>
         <td class="col-date"></td>
       </tr>
-
     {% endfor %}
   </tbody>
 </table>
 
 <div class="pager">
-
   {% if page.has_previous %}
-    <button
-      onclick="location.href='?page={{ page.previous_page_number }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}'"
-    >
-      이전
-    </button>
+    <button onclick="location.href='?page={{ page.previous_page_number }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}'">이전</button>
   {% else %}
     <button disabled>이전</button>
   {% endif %}
@@ -127,25 +82,158 @@
     {% if num == page.number %}
       <button aria-current="true">{{ num }}</button>
     {% else %}
-      <button
-        onclick="location.href='?page={{ num }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}'"
-      >
-        {{ num }}
-      </button>
+      <button onclick="location.href='?page={{ num }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}'">{{ num }}</button>
     {% endif %}
   {% endfor %}
 
   {% if page.has_next %}
-    <button
-      onclick="location.href='?page={{ page.next_page_number }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}'"
-    >
-      다음
-    </button>
+    <button onclick="location.href='?page={{ page.next_page_number }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}'">다음</button>
   {% else %}
     <button disabled>다음</button>
   {% endif %}
-
 </div>
 
 <div class="note">질문은 수강생이, 답변은 멘토가 씁니다. 답변도 게시글로 저장되고 원 질문을 가리킵니다.</div>
+
+<style>
+  .message-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.45);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .message-modal.open { display: flex; }
+  .message-modal-box {
+    position: relative;
+    width: min(460px, 100%);
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+  .message-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    border: 0;
+    background: transparent;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .message-modal-box .field { margin-top: 16px; }
+  .message-modal-box .control { width: 100%; box-sizing: border-box; }
+  .message-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .message-result { display: none; margin-top: 12px; }
+</style>
+<div id="message-modal" class="message-modal" aria-hidden="true">
+  <div class="message-modal-box" role="dialog" aria-modal="true" aria-labelledby="message-modal-title">
+    <button type="button" class="message-modal-close" id="message-modal-close" aria-label="쪽지 창 닫기">&times;</button>
+    <h2 id="message-modal-title">쪽지 보내기</h2>
+
+    <form id="message-modal-form" method="post" action="{% url 'message_send' %}">
+      {% csrf_token %}
+
+      <div class="field">
+        <label for="message-receiver-name">받는 사람</label>
+        <input id="message-receiver-name" class="control readonly" type="text" readonly>
+        <input id="message-receiver" type="hidden" name="receiver">
+      </div>
+
+      <div class="field">
+        <label for="message-content">내용</label>
+        <textarea id="message-content" class="control" name="content" rows="7" placeholder="쪽지 내용을 입력하세요" required></textarea>
+      </div>
+
+      <p id="message-result" class="message-result"></p>
+
+      <div class="message-modal-actions">
+        <button type="button" class="btn quiet" id="message-modal-cancel">취소</button>
+        <button class="btn" type="submit">보내기</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const modal = document.getElementById("message-modal");
+  const closeButton = document.getElementById("message-modal-close");
+  const cancelButton = document.getElementById("message-modal-cancel");
+  const form = document.getElementById("message-modal-form");
+  const receiverName = document.getElementById("message-receiver-name");
+  const receiver = document.getElementById("message-receiver");
+  const content = document.getElementById("message-content");
+  const result = document.getElementById("message-result");
+
+  function openMessageModal(link) {
+    receiver.value = link.dataset.receiver;
+    receiverName.value = link.dataset.name;
+    content.value = "";
+    result.textContent = "";
+    result.style.display = "none";
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+    content.focus();
+  }
+
+  function closeMessageModal() {
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+  }
+
+  document.querySelectorAll(".message-open").forEach(function (link) {
+    link.addEventListener("click", function (event) {
+      event.preventDefault();
+      openMessageModal(link);
+    });
+  });
+
+  closeButton.addEventListener("click", closeMessageModal);
+  cancelButton.addEventListener("click", closeMessageModal);
+
+  modal.addEventListener("click", function (event) {
+    if (event.target === modal) closeMessageModal();
+  });
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && modal.classList.contains("open")) closeMessageModal();
+  });
+
+  form.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    const submitButton = form.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    result.textContent = "쪽지를 보내는 중입니다.";
+    result.style.display = "block";
+
+    try {
+      const response = await fetch(form.action, {
+        method: "POST",
+        body: new FormData(form),
+        credentials: "same-origin",
+        headers: {"X-Requested-With": "XMLHttpRequest"}
+      });
+      if (!response.ok) throw new Error("message send failed");
+      result.textContent = "쪽지를 보냈습니다.";
+      setTimeout(closeMessageModal, 700);
+    } catch (error) {
+      result.textContent = "쪽지를 보내지 못했습니다. 다시 시도해주세요.";
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
+});
+</script>
 {% endblock %}

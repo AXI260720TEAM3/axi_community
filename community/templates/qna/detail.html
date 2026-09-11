@@ -3,100 +3,199 @@
 
 {% block content %}
 <div class="head">
-  <div class="crumb">
-    <a href="{% url 'qna_list' %}">Q&amp;A</a> · 질문
-  </div>
-
+  <div class="crumb"><a href="{% url 'qna_list' %}">Q&amp;A</a> · 질문</div>
   <a class="btn quiet" href="{% url 'qna_list' %}">목록으로</a>
 </div>
 
 <article class="panel">
   <div class="post-head">
     <h1>{{ question.title }}</h1>
-
     <div class="post-meta">
       <span>
-        <a href="{% url 'message_box' %}?receiver={{ question.writer.username }}">
-          {{ question.writer.member_name }}
-        </a>
+        <a class="message-open" href="#" data-receiver="{{ question.writer.username }}" data-name="{{ question.writer.member_name }}">{{ question.writer.member_name }}</a>
         · {{ question.writer.user_type.type_name }}
       </span>
-
       <span>{{ question.created_at|date:"Y년 n월 j일 H:i" }}</span>
-
-      {% if question.updated_at %}
-        <span>수정됨</span>
-      {% endif %}
+      {% if question.updated_at %}<span>수정됨</span>{% endif %}
     </div>
   </div>
-
-  <div class="post-body">
-    {{ question.content|linebreaks }}
-  </div>
+  <div class="post-body">{{ question.content|linebreaks }}</div>
 </article>
 
 <div class="panel">
   <div class="cmt-head">답변 {{ answers|length }}</div>
-
   {% for a in answers %}
     <div class="cmt">
       <div class="cmt-top">
-        <a href="{% url 'message_box' %}?receiver={{ a.writer.username }}">
-          <b>{{ a.writer.member_name }}</b>
-        </a>
-
+        <a class="message-open" href="#" data-receiver="{{ a.writer.username }}" data-name="{{ a.writer.member_name }}"><b>{{ a.writer.member_name }}</b></a>
         <span class="tag">{{ a.writer.user_type.type_name }}</span>
         <time>{{ a.created_at|date:"n월 j일 H:i" }}</time>
       </div>
-
       <h3>{{ a.title }}</h3>
       <p>{{ a.content|linebreaksbr }}</p>
     </div>
-
   {% empty %}
-    <div class="cmt gone">
-      <p>아직 등록된 답변이 없습니다.</p>
-    </div>
+    <div class="cmt gone"><p>아직 등록된 답변이 없습니다.</p></div>
   {% endfor %}
 </div>
 
 {% if can_answer %}
 <div class="panel">
   <h2>답변 작성</h2>
-
-  <form
-    method="post"
-    action="{% url 'qna_answer' question.post_id %}"
-  >
+  <form method="post" action="{% url 'qna_answer' question.post_id %}">
     {% csrf_token %}
-
     <div class="field">
       <label for="id_answer_title">답변 제목</label>
-      <input
-        id="id_answer_title"
-        type="text"
-        name="title"
-        maxlength="250"
-        placeholder="답변 제목을 입력하세요"
-        required
-      >
+      <input id="id_answer_title" type="text" name="title" maxlength="250" placeholder="답변 제목을 입력하세요" required>
     </div>
-
     <div class="field">
       <label for="id_answer_content">답변 내용</label>
-      <textarea
-        id="id_answer_content"
-        name="content"
-        rows="8"
-        placeholder="답변 내용을 입력하세요"
-        required
-      ></textarea>
+      <textarea id="id_answer_content" name="content" rows="8" placeholder="답변 내용을 입력하세요" required></textarea>
     </div>
-
-    <div class="row">
-      <button class="btn" type="submit">답변 등록</button>
-    </div>
+    <div class="row"><button class="btn" type="submit">답변 등록</button></div>
   </form>
 </div>
 {% endif %}
+
+<style>
+  .message-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.45);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .message-modal.open { display: flex; }
+  .message-modal-box {
+    position: relative;
+    width: min(460px, 100%);
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+  .message-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    border: 0;
+    background: transparent;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .message-modal-box .field { margin-top: 16px; }
+  .message-modal-box .control { width: 100%; box-sizing: border-box; }
+  .message-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .message-result { display: none; margin-top: 12px; }
+</style>
+<div id="message-modal" class="message-modal" aria-hidden="true">
+  <div class="message-modal-box" role="dialog" aria-modal="true" aria-labelledby="message-modal-title">
+    <button type="button" class="message-modal-close" id="message-modal-close" aria-label="쪽지 창 닫기">&times;</button>
+    <h2 id="message-modal-title">쪽지 보내기</h2>
+
+    <form id="message-modal-form" method="post" action="{% url 'message_send' %}">
+      {% csrf_token %}
+
+      <div class="field">
+        <label for="message-receiver-name">받는 사람</label>
+        <input id="message-receiver-name" class="control readonly" type="text" readonly>
+        <input id="message-receiver" type="hidden" name="receiver">
+      </div>
+
+      <div class="field">
+        <label for="message-content">내용</label>
+        <textarea id="message-content" class="control" name="content" rows="7" placeholder="쪽지 내용을 입력하세요" required></textarea>
+      </div>
+
+      <p id="message-result" class="message-result"></p>
+
+      <div class="message-modal-actions">
+        <button type="button" class="btn quiet" id="message-modal-cancel">취소</button>
+        <button class="btn" type="submit">보내기</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const modal = document.getElementById("message-modal");
+  const closeButton = document.getElementById("message-modal-close");
+  const cancelButton = document.getElementById("message-modal-cancel");
+  const form = document.getElementById("message-modal-form");
+  const receiverName = document.getElementById("message-receiver-name");
+  const receiver = document.getElementById("message-receiver");
+  const content = document.getElementById("message-content");
+  const result = document.getElementById("message-result");
+
+  function openMessageModal(link) {
+    receiver.value = link.dataset.receiver;
+    receiverName.value = link.dataset.name;
+    content.value = "";
+    result.textContent = "";
+    result.style.display = "none";
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+    content.focus();
+  }
+
+  function closeMessageModal() {
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+  }
+
+  document.querySelectorAll(".message-open").forEach(function (link) {
+    link.addEventListener("click", function (event) {
+      event.preventDefault();
+      openMessageModal(link);
+    });
+  });
+
+  closeButton.addEventListener("click", closeMessageModal);
+  cancelButton.addEventListener("click", closeMessageModal);
+
+  modal.addEventListener("click", function (event) {
+    if (event.target === modal) closeMessageModal();
+  });
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && modal.classList.contains("open")) closeMessageModal();
+  });
+
+  form.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    const submitButton = form.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    result.textContent = "쪽지를 보내는 중입니다.";
+    result.style.display = "block";
+
+    try {
+      const response = await fetch(form.action, {
+        method: "POST",
+        body: new FormData(form),
+        credentials: "same-origin",
+        headers: {"X-Requested-With": "XMLHttpRequest"}
+      });
+      if (!response.ok) throw new Error("message send failed");
+      result.textContent = "쪽지를 보냈습니다.";
+      setTimeout(closeMessageModal, 700);
+    } catch (error) {
+      result.textContent = "쪽지를 보내지 못했습니다. 다시 시도해주세요.";
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
+});
+</script>
 {% endblock %}

@@ -35,11 +35,17 @@ def profile_edit(request):
     if request.method == 'POST':
         user = request.user
 
+        current_password = request.POST.get('current_password')
         email = request.POST.get('email')
         phone = request.POST.get('phone')
         address = request.POST.get('address')
         new_password = request.POST.get('new_password')
         new_password_confirm = request.POST.get('new_password_confirm')
+
+        # 0. 필수: 현재 비밀번호 검증
+        if not current_password or not user.check_password(current_password):
+            messages.error(request, "현재 비밀번호가 일치하지 않습니다.")
+            return redirect('mypage')
 
         # 1. 기본 회원정보 업데이트 (이메일, 전화번호, 주소)
         if email:
@@ -83,9 +89,6 @@ def my_posts_ajax(request):
   """내가 쓴 글 탭 클릭 시 AJAX 요청을 처리하는 뷰"""
   board_name = request.GET.get('board_name', '자유게시판')
 
-  # 1. 로그인한 사용자(request.user)가 쓴 글 중
-  # 2. 선택한 게시판 이름과 일치하고
-  # 3. 삭제되지 않은(is_deleted=False) 글만 조회
   posts = (
       Post.objects.filter(
           writer=request.user, board__board_name=board_name, is_deleted=False
@@ -95,6 +98,4 @@ def my_posts_ajax(request):
   )
 
   context = {'posts': posts}
-
-  # 아래 2번에서 만들 조각 템플릿으로 렌더링
   return render(request, 'account/partials/my_post_list.html', context)

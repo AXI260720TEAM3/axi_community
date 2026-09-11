@@ -49,8 +49,8 @@ INSERT INTO `board_permission` (`board_id`, `type_id`, `permission_type`) VALUES
 	(4, 4, '일반');   --              직원
 
 -- ---------- 회원
--- 비밀번호는 모두 test1234 를 SHA-256 으로 해시한 값입니다.
--- 실제 서비스라면 계정마다 다른 소금값을 섞어야 합니다. 테스트용이라 단순화했습니다.
+-- 비밀번호는 모두 test1234 를 SHA-256 으로 해시한 값입니다.  SHA2()는 MariaDB(또는 MySQL) DBMS에 내장되어 있는 SQL 함수
+-- 실제 서비스라면 계정마다 다른 소금값을 섞어야 합니다. 테스트용이라 단순화했습니다. *소금값: 암호화할 때 덧붙이는 랜덤한 고유 문자열
 INSERT INTO `member`
 	(`member_id`, `login_id`, `member_name`, `email`, `password`, `phone`, `address`, `joined_at`, `type_id`,
 	 `last_login`, `is_active`, `is_staff`, `is_superuser`) VALUES

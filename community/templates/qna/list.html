@@ -3,6 +3,20 @@
 
 {% block content %}
 
+<style>
+  .qna-file-count {
+    margin-left: 8px;
+    color: #586f69;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .subject .tag.open {
+    margin-left: 3px;
+  }
+</style>
+
+
 <div class="head">
   <div>
     <div class="crumb">게시판</div>
@@ -14,6 +28,7 @@
     <a class="btn" href="{% url 'qna_ask' %}">질문하기</a>
   {% endif %}
 </div>
+
 
 <form class="filters" method="get">
   <div class="search">
@@ -30,6 +45,7 @@
   <a class="selectish" href="{% url 'qna_list' %}">전체</a>
 </form>
 
+
 <table class="list">
   <thead>
     <tr>
@@ -41,21 +57,36 @@
   </thead>
 
   <tbody>
+
     {% for q in page %}
+
       <tr>
-        <td class="col-no">{{ q.post_id }}</td>
+        <td class="col-no">
+          {{ q.post_id }}
+        </td>
 
         <td class="subject">
+
           <a href="{% url 'qna_detail' q.post_id %}">
             {{ q.title }}
           </a>
 
-          {% if q.answer_count == 0 %}
-            <span class="tag open">답변 대기</span>
+          {% if q.file_count %}
+            <span class="qna-file-count">
+              첨부 {{ q.file_count }}
+            </span>
           {% endif %}
+
+          {% if q.answer_count == 0 %}
+            <span class="tag open">
+              답변 대기
+            </span>
+          {% endif %}
+
         </td>
 
         <td class="col-writer">
+
           {% if user.is_authenticated %}
             <a
               class="writer message-open"
@@ -70,12 +101,17 @@
               {{ q.writer.member_name }}
             </span>
           {% endif %}
+
         </td>
 
-        <td class="col-date">{{ q.created_at|date:"m-d" }}</td>
+        <td class="col-date">
+          {{ q.created_at|date:"m-d" }}
+        </td>
       </tr>
 
+
       {% for a in q.visible_answers %}
+
         <tr>
           <td class="col-no"></td>
 
@@ -89,6 +125,7 @@
           </td>
 
           <td class="col-writer">
+
             {% if user.is_authenticated %}
               <a
                 class="writer message-open"
@@ -103,44 +140,66 @@
                 {{ a.writer.member_name }}
               </span>
             {% endif %}
+
           </td>
 
-          <td class="col-date">{{ a.created_at|date:"m-d" }}</td>
+          <td class="col-date">
+            {{ a.created_at|date:"m-d" }}
+          </td>
         </tr>
+
       {% endfor %}
 
+
     {% empty %}
+
       <tr>
         <td class="col-no"></td>
         <td class="subject">등록된 질문이 없습니다.</td>
         <td class="col-writer"></td>
         <td class="col-date"></td>
       </tr>
+
     {% endfor %}
+
   </tbody>
 </table>
 
+
 <div class="pager">
+
   {% if page.has_previous %}
-    <button onclick="location.href='?page={{ page.previous_page_number }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}'">이전</button>
+    <button onclick="location.href='?page={{ page.previous_page_number }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}'">
+      이전
+    </button>
   {% else %}
     <button disabled>이전</button>
   {% endif %}
 
+
   {% for num in page.paginator.page_range %}
+
     {% if num == page.number %}
       <button aria-current="true">{{ num }}</button>
     {% else %}
-      <button onclick="location.href='?page={{ num }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}'">{{ num }}</button>
+      <button onclick="location.href='?page={{ num }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}'">
+        {{ num }}
+      </button>
     {% endif %}
+
   {% endfor %}
 
+
   {% if page.has_next %}
-    <button onclick="location.href='?page={{ page.next_page_number }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}'">다음</button>
+    <button onclick="location.href='?page={{ page.next_page_number }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}'">
+      다음
+    </button>
   {% else %}
     <button disabled>다음</button>
   {% endif %}
+
 </div>
+
 
 <div class="note">
   질문은 수강생이, 답변은 멘토가 씁니다. 답변도 게시글로 저장되고 원 질문을 가리킵니다.
@@ -237,6 +296,7 @@
     aria-modal="true"
     aria-labelledby="message-modal-title"
   >
+
     <button
       type="button"
       class="message-modal-close"

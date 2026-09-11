@@ -25,14 +25,27 @@
 </div>
 
 <!-- 회원정보 수정 영역 -->
+<!-- 회원정보 수정 영역 -->
 <form method="post" action="{% url 'profile_edit' %}">
   {% csrf_token %}
   <div class="panel pad" style="margin-top:18px">
     <h2>회원정보 수정</h2>
-    <p class="lede">아이디, 이름, 회원 유형은 바꿀 수 없습니다.</p>
+    <p class="lede">아이디, 이름, 회원 유형은 바꿀 수 없으며, 수정 시 현재 비밀번호 확인이 필요합니다.</p>
     
-    <!-- 1행: 아이디 / 이름 -->
+    <!-- 1행: 현재 비밀번호 / 이메일 -->
     <div class="two" style="margin-top:18px">
+      <div class="field">
+        <label for="current-pw">현재 비밀번호 <span style="color: red;">*</span></label>
+        <input class="control" id="current-pw" type="password" name="current_password" placeholder="현재 비밀번호 입력" required>
+      </div>
+      <div class="field">
+        <label for="my-mail">이메일</label>
+        <input class="control" id="my-mail" type="email" name="email" value="{{ user.email }}" required>
+      </div>
+    </div>
+
+    <!-- 2행: 아이디 / 이름 -->
+    <div class="two">
       <div class="field">
         <label for="my-id">아이디</label>
         <input class="control readonly" id="my-id" value="{{ user.username }}" readonly>
@@ -43,40 +56,37 @@
       </div>
     </div>
 
-    <!-- 2행: 회원 유형 / 이메일 -->
+    <!-- 3행: 회원 유형 / 새 비밀번호 -->
     <div class="two">
       <div class="field">
         <label for="my-type">회원 유형</label>
         <input class="control readonly" id="my-type" value="{{ user.user_type.type_name }}" readonly>
       </div>
       <div class="field">
-        <label for="my-mail">이메일</label>
-        <input class="control" id="my-mail" type="email" name="email" value="{{ user.email }}" required>
-      </div>
-    </div>
-
-    <!-- 3행: 새 비밀번호 / 새 비밀번호 확인 -->
-    <div class="two">
-      <div class="field">
         <label for="my-pw">새 비밀번호</label>
         <input class="control" id="my-pw" type="password" name="new_password" placeholder="바꾸지 않으려면 비워두세요">
       </div>
+    </div>
+
+    <!-- 4행: 새 비밀번호 확인 / 전화번호 -->
+    <div class="two">
       <div class="field">
         <label for="my-pw2">새 비밀번호 확인</label>
         <input class="control" id="my-pw2" type="password" name="new_password_confirm">
       </div>
-    </div>
-
-    <!-- 4행: 전화번호 / 주소 -->
-    <div class="two">
       <div class="field">
         <label for="my-phone">전화번호</label>
         <input class="control" id="my-phone" type="text" name="phone" value="{{ user.phone|default:'' }}">
       </div>
+    </div>
+
+    <!-- 5행: 주소 -->
+    <div class="two">
       <div class="field">
         <label for="my-addr">주소</label>
         <input class="control" id="my-addr" type="text" name="address" value="{{ user.address|default:'' }}">
       </div>
+      <div class="field"></div> <!-- 우측 여백 정렬용 -->
     </div>
       
     <div class="formfoot">

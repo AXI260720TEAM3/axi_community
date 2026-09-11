@@ -1,201 +1,250 @@
 {% extends "base.html" %}
-{% block title %}{{ question.title }} · 모두의국비{% endblock %}
+{% block title %}쪽지 상세 · 모두의국비{% endblock %}
 
 {% block content %}
-<div class="head">
-  <div class="crumb"><a href="{% url 'qna_list' %}">Q&amp;A</a> · 질문</div>
-  <a class="btn quiet" href="{% url 'qna_list' %}">목록으로</a>
-</div>
-
-<article class="panel">
-  <div class="post-head">
-    <h1>{{ question.title }}</h1>
-    <div class="post-meta">
-      <span>
-        <a class="message-open" href="#" data-receiver="{{ question.writer.username }}" data-name="{{ question.writer.member_name }}">{{ question.writer.member_name }}</a>
-        · {{ question.writer.user_type.type_name }}
-      </span>
-      <span>{{ question.created_at|date:"Y년 n월 j일 H:i" }}</span>
-      {% if question.updated_at %}<span>수정됨</span>{% endif %}
-    </div>
-  </div>
-  <div class="post-body">{{ question.content|linebreaks }}</div>
-</article>
-
-<div class="panel">
-  <div class="cmt-head">답변 {{ answers|length }}</div>
-  {% for a in answers %}
-    <div class="cmt">
-      <div class="cmt-top">
-        <a class="message-open" href="#" data-receiver="{{ a.writer.username }}" data-name="{{ a.writer.member_name }}"><b>{{ a.writer.member_name }}</b></a>
-        <span class="tag">{{ a.writer.user_type.type_name }}</span>
-        <time>{{ a.created_at|date:"n월 j일 H:i" }}</time>
-      </div>
-      <h3>{{ a.title }}</h3>
-      <p>{{ a.content|linebreaksbr }}</p>
-    </div>
-  {% empty %}
-    <div class="cmt gone"><p>아직 등록된 답변이 없습니다.</p></div>
-  {% endfor %}
-</div>
-
-{% if can_answer %}
-<div class="panel">
-  <h2>답변 작성</h2>
-  <form method="post" action="{% url 'qna_answer' question.post_id %}">
-    {% csrf_token %}
-    <div class="field">
-      <label for="id_answer_title">답변 제목</label>
-      <input id="id_answer_title" type="text" name="title" maxlength="250" placeholder="답변 제목을 입력하세요" required>
-    </div>
-    <div class="field">
-      <label for="id_answer_content">답변 내용</label>
-      <textarea id="id_answer_content" name="content" rows="8" placeholder="답변 내용을 입력하세요" required></textarea>
-    </div>
-    <div class="row"><button class="btn" type="submit">답변 등록</button></div>
-  </form>
-</div>
-{% endif %}
 
 <style>
-  .message-modal {
+  .message-alert {
     display: none;
     position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background: rgba(0, 0, 0, 0.45);
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10000;
+    font-size: 16px;
+    font-weight: 600;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 14px 20px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
   }
-  .message-modal.open { display: flex; }
-  .message-modal-box {
-    position: relative;
-    width: min(460px, 100%);
-    max-height: 90vh;
-    overflow-y: auto;
-    background: #fff;
-    border-radius: 12px;
-    padding: 24px;
+
+  .message-alert.success {
+    color: black;
+  }
+
+  .message-alert.error {
+    color: red;
+  }
+
+  .message-detail-content {
+    width: 100%;
     box-sizing: border-box;
+    min-height: 140px;
   }
-  .message-modal-close {
-    position: absolute;
-    top: 12px;
-    right: 14px;
-    border: 0;
-    background: transparent;
-    font-size: 28px;
-    line-height: 1;
-    cursor: pointer;
-  }
-  .message-modal-box .field { margin-top: 16px; }
-  .message-modal-box .control { width: 100%; box-sizing: border-box; }
-  .message-modal-actions {
+
+  .message-detail-actions {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
     gap: 8px;
-    margin-top: 16px;
+    margin-top: 24px;
   }
-  .message-result { display: none; margin-top: 12px; }
+
+  .message-detail-actions form {
+    margin: 0;
+  }
 </style>
-<div id="message-modal" class="message-modal" aria-hidden="true">
-  <div class="message-modal-box" role="dialog" aria-modal="true" aria-labelledby="message-modal-title">
-    <button type="button" class="message-modal-close" id="message-modal-close" aria-label="쪽지 창 닫기">&times;</button>
-    <h2 id="message-modal-title">쪽지 보내기</h2>
 
-    <form id="message-modal-form" method="post" action="{% url 'message_send' %}">
-      {% csrf_token %}
-
-      <div class="field">
-        <label for="message-receiver-name">받는 사람</label>
-        <input id="message-receiver-name" class="control readonly" type="text" readonly>
-        <input id="message-receiver" type="hidden" name="receiver">
-      </div>
-
-      <div class="field">
-        <label for="message-content">내용</label>
-        <textarea id="message-content" class="control" name="content" rows="7" placeholder="쪽지 내용을 입력하세요" required></textarea>
-      </div>
-
-      <p id="message-result" class="message-result"></p>
-
-      <div class="message-modal-actions">
-        <button type="button" class="btn quiet" id="message-modal-cancel">취소</button>
-        <button class="btn" type="submit">보내기</button>
-      </div>
-    </form>
+{% for msg in messages %}
+  <div class="message-alert {% if 'success' in msg.tags %}success{% else %}error{% endif %}">
+    {{ msg }}
   </div>
+{% endfor %}
+
+<div class="head">
+  <div>
+    <div class="crumb">내 활동</div>
+    <h1>쪽지 상세</h1>
+  </div>
+</div>
+
+<div class="panel">
+
+  <div class="pad">
+
+    <div class="mail-top">
+
+      {% if is_sender %}
+
+        <b>{{ message.receiver.member_name }}</b>
+
+        {% if message.receiver.user_type %}
+          {% if message.receiver.user_type.type_name == "멘토" %}
+            <span class="tag answer">{{ message.receiver.user_type.type_name }}</span>
+          {% elif message.receiver.user_type.type_name == "직원" %}
+            <span class="tag notice">{{ message.receiver.user_type.type_name }}</span>
+          {% else %}
+            <span class="tag">{{ message.receiver.user_type.type_name }}</span>
+          {% endif %}
+        {% endif %}
+
+      {% else %}
+
+        <b>{{ message.sender.member_name }}</b>
+
+        {% if message.sender.user_type %}
+          {% if message.sender.user_type.type_name == "멘토" %}
+            <span class="tag answer">{{ message.sender.user_type.type_name }}</span>
+          {% elif message.sender.user_type.type_name == "직원" %}
+            <span class="tag notice">{{ message.sender.user_type.type_name }}</span>
+          {% else %}
+            <span class="tag">{{ message.sender.user_type.type_name }}</span>
+          {% endif %}
+        {% endif %}
+
+      {% endif %}
+
+      <time>
+        {{ message.sent_at|date:"Y.m.d H:i" }}
+      </time>
+
+    </div>
+
+
+    {% if is_sender %}
+
+      <form
+        method="post"
+        id="message-edit-form"
+      >
+        {% csrf_token %}
+
+        <div class="field">
+
+          <label for="message-edit-content">내용</label>
+
+          <textarea
+            id="message-edit-content"
+            class="control message-detail-content"
+            name="content"
+            rows="7"
+          >{{ message.content }}</textarea>
+
+        </div>
+
+        <div class="field">
+
+          <label>읽음 상태</label>
+
+          {% if message.read_at %}
+            <p>읽음 · {{ message.read_at|date:"Y.m.d H:i" }}</p>
+          {% else %}
+            <p>읽지 않음</p>
+          {% endif %}
+
+        </div>
+
+        <div class="message-detail-actions">
+
+          <button
+            type="submit"
+            class="btn quiet"
+            name="action"
+            value="edit"
+          >
+            수정
+          </button>
+
+          <button
+            type="submit"
+            class="btn quiet"
+            name="action"
+            value="delete"
+            formnovalidate
+            onclick="return confirm('이 쪽지를 삭제하시겠습니까? 삭제하면 상대방의 받은 쪽지함에서도 사라집니다.');"
+          >
+            삭제
+          </button>
+
+          <a
+            href="{% url 'message_box' %}?tab=sent"
+            class="btn"
+          >
+            쪽지함으로
+          </a>
+
+        </div>
+
+      </form>
+
+    {% else %}
+
+      <div class="field">
+
+        <label>내용</label>
+
+        <div class="control message-detail-content">
+          {{ message.content|linebreaksbr }}
+        </div>
+
+      </div>
+
+      <div class="field">
+
+        <label>읽음 상태</label>
+        <p>읽음 · {{ message.read_at|date:"Y.m.d H:i" }}</p>
+
+      </div>
+
+      <div class="message-detail-actions">
+
+        <a
+          href="{% url 'message_box' %}?receiver={{ message.sender.username }}"
+          class="btn quiet"
+        >
+          답장하기
+        </a>
+
+        <a
+          href="{% url 'message_box' %}?tab=received"
+          class="btn"
+        >
+          쪽지함으로
+        </a>
+
+      </div>
+
+    {% endif %}
+
+  </div>
+
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-  const modal = document.getElementById("message-modal");
-  const closeButton = document.getElementById("message-modal-close");
-  const cancelButton = document.getElementById("message-modal-cancel");
-  const form = document.getElementById("message-modal-form");
-  const receiverName = document.getElementById("message-receiver-name");
-  const receiver = document.getElementById("message-receiver");
-  const content = document.getElementById("message-content");
-  const result = document.getElementById("message-result");
+  const alertMessages = document.querySelectorAll(".message-alert");
+  const editForm = document.getElementById("message-edit-form");
+  const editContent = document.getElementById("message-edit-content");
 
-  function openMessageModal(link) {
-    receiver.value = link.dataset.receiver;
-    receiverName.value = link.dataset.name;
-    content.value = "";
-    result.textContent = "";
-    result.style.display = "none";
-    modal.classList.add("open");
-    modal.setAttribute("aria-hidden", "false");
-    content.focus();
-  }
+  alertMessages.forEach(function(alertMessage) {
+    alertMessage.style.display = "block";
 
-  function closeMessageModal() {
-    modal.classList.remove("open");
-    modal.setAttribute("aria-hidden", "true");
-  }
+    setTimeout(function() {
+      alertMessage.style.display = "none";
+    }, 2000);
+  });
 
-  document.querySelectorAll(".message-open").forEach(function (link) {
-    link.addEventListener("click", function (event) {
-      event.preventDefault();
-      openMessageModal(link);
+  if (editForm && editContent) {
+    editForm.addEventListener("submit", function(event) {
+      const action = event.submitter ? event.submitter.value : "";
+
+      if (action === "edit" && !editContent.value.trim()) {
+        event.preventDefault();
+
+        const warning = document.createElement("div");
+        warning.className = "message-alert error";
+        warning.textContent = "쪽지 내용을 입력해주세요.";
+        document.body.appendChild(warning);
+
+        warning.style.display = "block";
+
+        setTimeout(function() {
+          warning.remove();
+        }, 2000);
+      }
     });
-  });
-
-  closeButton.addEventListener("click", closeMessageModal);
-  cancelButton.addEventListener("click", closeMessageModal);
-
-  modal.addEventListener("click", function (event) {
-    if (event.target === modal) closeMessageModal();
-  });
-
-  document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape" && modal.classList.contains("open")) closeMessageModal();
-  });
-
-  form.addEventListener("submit", async function (event) {
-    event.preventDefault();
-    const submitButton = form.querySelector('button[type="submit"]');
-    submitButton.disabled = true;
-    result.textContent = "쪽지를 보내는 중입니다.";
-    result.style.display = "block";
-
-    try {
-      const response = await fetch(form.action, {
-        method: "POST",
-        body: new FormData(form),
-        credentials: "same-origin",
-        headers: {"X-Requested-With": "XMLHttpRequest"}
-      });
-      if (!response.ok) throw new Error("message send failed");
-      result.textContent = "쪽지를 보냈습니다.";
-      setTimeout(closeMessageModal, 700);
-    } catch (error) {
-      result.textContent = "쪽지를 보내지 못했습니다. 다시 시도해주세요.";
-    } finally {
-      submitButton.disabled = false;
-    }
-  });
-});
+  }
 </script>
+
 {% endblock %}

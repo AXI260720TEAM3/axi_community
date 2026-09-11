@@ -50,7 +50,11 @@
           {% if p.comment_count %}<span class="meta-inline">[{{ p.comment_count }}]</span>{% endif %}
           {% if p.file_count %}<span class="meta-inline">첨부 {{ p.file_count }}</span>{% endif %}
         </td>
-        <td class="col-writer">{{ p.writer.member_name }}</td>
+        <td class="col-writer">
+          {% if user.is_authenticated and p.writer_id != user.pk %}
+            <a href="{% url 'message_box' %}?receiver={{ p.writer.username|urlencode }}">{{ p.writer.member_name }}</a>
+          {% else %}{{ p.writer.member_name }}{% endif %}
+        </td>
         <td class="col-date">{{ p.created_at|date:"m-d" }}</td>
       </tr>
     {% empty %}

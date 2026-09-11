@@ -80,18 +80,53 @@ def post_create(request, board_id):
 
 @login_required
 def post_update(request, post_id):
-    post = get_object_or_404(Post,pk=post_id, is_deleted=False)
+    post = get_object_or_404(Post, pk=post_id, is_deleted=False)
 
     if not is_owner(request.user, post):
         return redirect("post_detail", post_id=post.post_id)
 
     if request.method == "POST":
-        post.title = request.POST["title"]
-        post.content = request.POST["content"]
+        title = request.POST.get("title", "").strip()
+        content = request.POST.get("content", "").strip()
+
+        if not title or not content:
+            messages.error(request, "제목과 내용을 모두 입력하세요.", extra_tags="alert")
+            return render(request, "board/edit.html", {
+                "post": post,
+                "title": title,
+                "content": content,
+                "attachments": post.attachments.all(),
+                "nav_current": post.board_id,
+            })
+
+        post.title = title
+        post.content = content
         post.updated_at = timezone.now()
         post.save()
-        return redirect("post_detail",post_id=post.post_id)
-    return render(request, "board/edit.html", {"post": post, "nav_current":post.board_id})
+
+        # 체크한 기존 첨부 삭제 — 반드시 이 글의 첨부 중에서만 찾습니다
+        delete_ids = request.POST.getlist("delete_files")
+        for a in post.attachments.filter(pk__in=delete_ids):
+            a.stored_path.delete(save=False)   # 디스크의 실제 파일
+            a.delete()                         # DB 의 행
+
+        # 새로 추가한 첨부 저장 — 글쓰기와 같은 코드
+        for f in request.FILES.getlist("files"):
+            Attachment.objects.create(
+                post=post,
+                origin_name=f.name,
+                stored_path=f,
+                file_size=f.size,
+            )
+        return redirect("post_detail", post_id=post.post_id)
+
+    return render(request, "board/edit.html", {
+        "post": post,
+        "title": post.title,
+        "content": post.content,
+        "attachments": post.attachments.all(),
+        "nav_current": post.board_id,
+    })
 
     # TODO [A] 작성자 본인인지 확인(permissions.is_owner) → 수정 → updated_at 갱신
     #raise NotImplementedError("post_update — [A] 팀장 담당")

@@ -51,22 +51,5 @@
 {% endblock %}
 {% block extra_js %}
 <script src="{% static 'community/js/dropzone.js' %}"></script>
-<script>
-(function () {
-  var title = document.getElementById("w-title");
-  var body  = document.getElementById("w-body");
-
-  title.form.addEventListener("submit", function (e) {
-    var fields = [title, body];
-    for (var i = 0; i < fields.length; i++) {
-      if (fields[i].value.trim() === "") {
-        e.preventDefault();          // 제출 취소 → 페이지가 그대로라 고른 파일도 그대로
-        fields[i].value = "";        // 공백만 있던 칸을 진짜 빈칸으로
-        fields[i].reportValidity();  // "이 입력란을 작성하세요" 말풍선 띄우기
-        return;
-      }
-    }
-  });
-})();
-</script>
+<script src="{% static 'community/js/form-check.js' %}"></script>
 {% endblock %}

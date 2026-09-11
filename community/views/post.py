@@ -158,6 +158,8 @@ def attachment_download(request, attachment_id):
     except FileNotFoundError:
         logger.warning("첨부파일 없음: id=%s path=%s", a.attachment_id, a.stored_path.name)
         messages.error(request, "파일을 찾을 수 없습니다. 관리자에게 문의하세요.", extra_tags="alert")
+        if a.post.board.board_name == "Q&A":
+            return redirect("qna_detail", post_id=a.post.parent_id or a.post_id)
         return redirect("post_detail", post_id=a.post_id)
     
     return FileResponse(f, as_attachment=True, filename=a.origin_name)

@@ -25,7 +25,6 @@
 </div>
 
 <!-- 회원정보 수정 영역 -->
-<!-- 회원정보 수정 영역 -->
 <form method="post" action="{% url 'profile_edit' %}">
   {% csrf_token %}
   <div class="panel pad" style="margin-top:18px">
@@ -95,6 +94,19 @@
     </div>
   </div>
 </form>
+
+<div class="action-buttons" style="text-align: center; margin: 20px 0;">
+
+  <!-- 2. 직원(staff) 또는 Django 관리자(is_staff) 전용 버튼 -->
+  {% if user.user_type.type_name == '직원' or user.is_staff %}
+    <!-- 커스텀 만든 직원 전용 관리 페이지로 이동 -->
+    <a href="{% url 'admin:index' %}" class="btn primary">직원전용 관리 시스템</a>
+    
+  {% endif %}
+
+</div>
+
+
 
 <!-- 내가 쓴 글 목록 영역 (수정 완료본) -->
 <div class="panel pad">

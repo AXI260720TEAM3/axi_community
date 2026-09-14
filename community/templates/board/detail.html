@@ -21,11 +21,15 @@
     <h1>{{ post.title }}</h1>
     <div class="post-meta">
       <span>
-        {% if user.is_authenticated and not is_owner %}
+        {% if post.board.is_anonymous %}
+          익명{% if is_owner %} (나){% endif %}
+        {% elif user.is_authenticated and not is_owner %}
           <a class="message-open" href="{% url 'message_box' %}?receiver={{ post.writer.username|urlencode }}"
              data-receiver="{{ post.writer.username }}" data-name="{{ post.writer.member_name }}">{{ post.writer.member_name }}</a>
-        {% else %}{{ post.writer.member_name }}{% endif %}
-        · {{ post.writer.user_type.type_name }}
+          · {{ post.writer.user_type.type_name }}
+        {% else %}
+          {{ post.writer.member_name }} · {{ post.writer.user_type.type_name }}
+        {% endif %}
       </span>
       <span>{{ post.created_at|date:"Y년 n월 j일 H:i" }}</span>
       {% if post.updated_at %}<span>수정됨</span>{% endif %}
@@ -41,7 +45,6 @@
   <div class="files">
     <h5>첨부파일</h5>
     {% for a in attachments %}
-      {# TODO [A] href 를 {% url 'attachment_download' a.attachment_id %} 로 바꾸세요 #}
       <div class="file">
         <a class="name" href="{% url 'attachment_download' a.attachment_id %}">{{ a.origin_name }}</a>
         <span class="size">{{ a.file_size|filesizeformat }}</span>
@@ -51,7 +54,7 @@
   {% endif %}
 
   <div class="post-foot">
-    {% if user.is_authenticated and not is_owner %}
+    {% if user.is_authenticated and not is_owner and not post.board.is_anonymous %}
         <a class="btn quiet sm message-open" href="{% url 'message_box' %}?receiver={{ post.writer.username|urlencode }}"
          data-receiver="{{ post.writer.username }}" data-name="{{ post.writer.member_name }}">쪽지 보내기</a>
     {% endif %}

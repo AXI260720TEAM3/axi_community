@@ -15,6 +15,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.http import JsonResponse
 
 from ..models import Message
 
@@ -187,6 +188,16 @@ def message_detail(request, message_id):
         },
     )
 
+def _is_popup(request):
+    """팝업(fetch)에서 온 요청인지. 팝업 JS가 이 헤더를 붙여 보냅니다"""
+    return request.headers.get("x-requested-with") == "XMLHttpRequest"
+
+def _send_failed(request,text):
+    """보내기 실패 응답. 팝업이면 JSON, 일반 폼이면 지금처럼 쪽지함으로."""
+    if _is_popup(request):
+        return JsonResponse({"ok":False, "error": text}, status=400)
+    messages.error(request, text)
+    return redirect("message_box")
 
 @login_required
 def message_send(request):
@@ -204,30 +215,18 @@ def message_send(request):
     ).strip()
 
     if not receiver_login_id:
-        messages.error(
-            request,
-            "받는 사람을 선택해주세요.",
-        )
-        return redirect("message_box")
+        return _send_failed(request, "받는 사람을 선택해주세요.")
 
     if not content:
-        messages.error(
-            request,
-            "쪽지 내용을 입력해주세요.",
-        )
-        return redirect("message_box")
+        return _send_failed(request, "쪽지 내용을 입력해주세요.")
 
-    receiver = get_object_or_404(
-        User,
-        username=receiver_login_id,
-    )
+    receiver = User.objects.filter(username=receiver_login_id).first()
+
+    if receiver is None:
+        return _send_failed(request, "그런 아이디의 회원이 없습니다.")
 
     if receiver == request.user:
-        messages.error(
-            request,
-            "자기 자신에게는 쪽지를 보낼 수 없습니다.",
-        )
-        return redirect("message_box")
+        return _send_failed(request, "자기 자신에게는 쪽지를 보낼 수 없습니다.")
 
     Message.objects.create(
         sender=request.user,
@@ -235,6 +234,9 @@ def message_send(request):
         content=content,
     )
 
+    if _is_popup(request):
+        return JsonResponse({"ok": True})
+    
     messages.success(
         request,
         "쪽지를 보냈습니다.",

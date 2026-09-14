@@ -1,54 +1,148 @@
-{% comment %} ----------------------------------------------------------------
-   [C] 담당 — 댓글 영역입니다.
-
-   board/detail.html 에서 {% include %} 로 불러 씁니다.
-   detail.html 은 [A] 팀장 파일이니 건드리지 말고 이 파일만 고치세요.
-   그래야 같은 시간에 작업해도 충돌이 나지 않습니다.
-
-   쓸 수 있는 값 (detail.html 에서 그대로 넘어옵니다)
-       post      게시글
-       comments  삭제되지 않은 댓글 목록
-       user      로그인한 사람
-
-   남은 작업
-       댓글 등록  comment_create  (POST, content)
-       댓글 삭제  comment_delete  (is_deleted = True)
-   ---------------------------------------------------------------- {% endcomment %}
 {% if post.board.allow_comment %}
+<style>
+  .cmt-reply {
+    margin-left: 40px;
+    padding-left: 15px;
+    border-left: 2px solid #e5e7eb;
+  }
+
+  .reply-form {
+    display: none;
+    margin: 10px 0 10px 40px;
+  }
+
+  .reply-form.open {
+    display: block;
+  }
+
+  .comment-delete {
+  border: 0;
+  background: transparent;
+  padding: 0 3px;
+  margin-left: 4px;
+  font-size: 18px;
+  line-height: 1;
+  color: #888;
+  cursor: pointer;
+}
+
+.comment-delete:hover {
+  color: #222;
+}
+
+.reply-toggle {
+  border: 0;
+  border-radius: 5px;
+  background: #356f60;
+  color: white;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.reply-toggle:hover {
+  opacity: 0.9;
+}
+</style>
+
 <div class="panel">
   <div class="cmt-head">댓글 {{ comments|length }}</div>
 
   {% for c in comments %}
-    <div class="cmt">
-      <div class="cmt-top">
+    {% if not c.parent_id %}
+
+      <div class="cmt">
+        <div class="cmt-top">
+          {% if user.is_authenticated and c.writer_id != user.member_id %}
+            <a class="message-open"
+               href="{% url 'message_box' %}?receiver={{ c.writer.username|urlencode }}"
+               data-receiver="{{ c.writer.username }}"
+               data-name="{{ c.writer.member_name }}">
+              <b>{{ c.writer.member_name }}</b>
+            </a>
+          {% else %}
+            <b>{{ c.writer.member_name }}</b>
+          {% endif %}
+
+          {% include "_usertype.html" with member=c.writer %}
+          <time>{{ c.created_at|date:"n월 j일 H:i" }}</time>
+
+          {% if c.writer_id == user.member_id %}
+            <form method="post"
+                  action="{% url 'comment_delete' c.comment_id %}"
+                  style="display:inline;">
+              {% csrf_token %}
+              <button type="submit"
+               class="comment-delete"
+                aria-label="댓글 삭제"
+                title="삭제"
+                  >×</button>
+            </form>
+          {% endif %}
+        </div>
+
+        <p>{{ c.content|linebreaksbr }}</p>
 
         {% if user.is_authenticated and c.writer_id != user.member_id %}
-          <a class="message-open" href="{% url 'message_box' %}?receiver={{ c.writer.username|urlencode }}"
-             data-receiver="{{ c.writer.username }}" data-name="{{ c.writer.member_name }}"><b>{{ c.writer.member_name }}</b></a>
-        {% else %}
-          <b>{{ c.writer.member_name }}</b>
+          <button type="button"
+                  class="reply-toggle"
+                  data-target="reply-{{ c.comment_id }}">
+            답글
+          </button>
         {% endif %}
-
-        {% include "_usertype.html" with member=c.writer %}
-        <time>{{ c.created_at|date:"n월 j일 H:i" }}</time>
-
-        {% if c.writer_id == user.member_id %}
-          <span class="acts">
-            <form
-              method="post"
-              action="{% url 'comment_delete' c.comment_id %}"
-              style="display:inline;"
-            >
-              {% csrf_token %}
-              <button type="submit">삭제</button>
-            </form>
-          </span>
-        {% endif %}
-
       </div>
 
-      <p>{{ c.content|linebreaksbr }}</p>
-    </div>
+
+      {% for reply in comments %}
+        {% if reply.parent_id == c.comment_id %}
+          <div class="cmt cmt-reply">
+            <div class="cmt-top">
+              <b>{{ reply.writer.member_name }}</b>
+              {% include "_usertype.html" with member=reply.writer %}
+              <time>{{ reply.created_at|date:"n월 j일 H:i" }}</time>
+
+              {% if reply.writer_id == user.member_id %}
+                <form method="post"
+                      action="{% url 'comment_delete' reply.comment_id %}"
+                      style="display:inline;">
+                  {% csrf_token %}
+                  <button type="submit"
+                  class="comment-delete"
+                  aria-label="대댓글 삭제"
+                    title="삭제"
+                    >×</button>
+                </form>
+              {% endif %}
+            </div>
+
+            <p>{{ reply.content|linebreaksbr }}</p>
+          </div>
+        {% endif %}
+      {% endfor %}
+
+
+      {% if user.is_authenticated and c.writer_id != user.member_id %}
+        <form id="reply-{{ c.comment_id }}"
+              class="reply-form"
+              method="post"
+              action="{% url 'comment_create' post.post_id %}">
+          {% csrf_token %}
+
+          <input type="hidden"
+                 name="parent_id"
+                 value="{{ c.comment_id }}">
+
+          <textarea name="content"
+                    rows="2"
+                    maxlength="1000"
+                    placeholder="답글을 입력하세요"></textarea>
+
+          <button class="btn sm" type="submit">답글 등록</button>
+        </form>
+      {% endif %}
+
+    {% endif %}
 
   {% empty %}
     <div class="cmt gone">
@@ -56,20 +150,17 @@
     </div>
   {% endfor %}
 
+
   {% if user.is_authenticated %}
-    <form
-      class="cmt-write"
-      method="post"
-      action="{% url 'comment_create' post.post_id %}"
-    >
+    <form class="cmt-write"
+          method="post"
+          action="{% url 'comment_create' post.post_id %}">
       {% csrf_token %}
 
-      <textarea
-        name="content"
-        rows="3"
-        placeholder="댓글을 입력하세요"
-        maxlength="1000"
-      ></textarea>
+      <textarea name="content"
+                rows="3"
+                maxlength="1000"
+                placeholder="댓글을 입력하세요"></textarea>
 
       <div class="row">
         <span class="counter">0 / 1000</span>
@@ -78,6 +169,15 @@
     </form>
   {% endif %}
 </div>
+
+
+<script>
+document.querySelectorAll(".reply-toggle").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document
+      .getElementById(btn.dataset.target)
+      .classList.toggle("open");
+  });
+});
+</script>
 {% endif %}
-
-

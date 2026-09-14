@@ -30,7 +30,7 @@
 
   function showResult(text, isError) {
     result.textContent = text;
-    result.className = isError ? "message-result error" : "messa
+    result.className = isError ? "message-result error" : "message-result";
     result.style.display = text ? "block" : "none";
   }
 
@@ -49,6 +49,8 @@
     if (e.key === "Escape" && modal.classList.contains("open")) closeModal();
   });
 
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
 
     if (!content.value.trim()) {
       showResult("쪽지 내용을 입력해주세요.", true);

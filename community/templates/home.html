@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}기회를 IT-DA{% endblock %}
+
+{% comment %} ----------------------------------------------------------------
+   [A] 첫 화면. 뷰는 community/views/board.py 의 home 입니다.
+
+   뷰에서 넘어오는 값
+       sections       게시판별 블록 [{title, board, posts}, ...]
+       waiting        답변이 아직 없는 Q&A 질문
+       popular        추천이 많은 글
+       total_posts / total_members   요약 숫자
+       unread_count   안 읽은 쪽지 (context_processors 가 자동으로 넣어줍니다)
+
+   익명게시판 글은 작성자를 반드시 '익명'으로 표시합니다.
+   ---------------------------------------------------------------- {% endcomment %}
+
+{% block content %}
+<div class="head">
+  <div>
+    <div class="crumb">홈</div>
+    <h1>기회를 IT-DA</h1>
+    <p class="lede">국비 수강생과 수료생이 정보를 나누는 공간입니다.</p>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><b>{{ total_posts }}</b><span>전체 글</span></div>
+  <div class="stat"><b>{{ total_members }}</b><span>회원</span></div>
+  <div class="stat"><b>{{ waiting|length }}</b><span>답변 대기 질문</span></div>
+  <div class="stat"><b>{{ unread_count }}</b><span>안 읽은 쪽지</span></div>
+</div>
+
+<div class="two cards" style="margin-top:18px">
+  {% for s in sections %}
+    {% if s.board %}
+      <div class="panel" style="margin-top:0">
+        <div class="cmt-head">
+          {{ s.title }}
+          <a class="lede" style="float:right;font-size:12.5px"
+             href="{% url 'board_list' s.board.board_id %}">더 보기</a>
+        </div>
+
+        {% for p in s.posts %}
+          <div class="cmt">
+            <div class="cmt-top">
+              <a href="{% url 'post_detail' p.post_id %}"><b>{{ p.title }}</b></a>
+              <time>{{ p.created_at|date:"m-d" }}</time>
+            </div>
+            <p>
+              {% comment %} 익명게시판은 작성자를 가립니다 {% endcomment %}
+              {% if s.board.is_anonymous %}익명{% else %}{{ p.writer.member_name }}{% endif %}
+            </p>
+          </div>
+        {% empty %}
+          <div class="cmt gone"><p>아직 글이 없습니다.</p></div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endfor %}
+</div>
+
+<div class="two cards" style="margin-top:18px">
+  <div class="panel" style="margin-top:0">
+    <div class="cmt-head">
+      답변을 기다리는 질문
+      <a class="lede" style="float:right;font-size:12.5px" href="{% url 'qna_list' %}">더 보기</a>
+    </div>
+
+    {% for p in waiting %}
+      <div class="cmt">
+        <div class="cmt-top">
+          <a href="{% url 'qna_detail' p.post_id %}"><b>{{ p.title }}</b></a>
+          <span class="tag open">답변 대기</span>
+          <time>{{ p.created_at|date:"m-d" }}</time>
+        </div>
+        <p>{{ p.writer.member_name }}</p>
+      </div>
+    {% empty %}
+      <div class="cmt gone"><p>대기 중인 질문이 없습니다.</p></div>
+    {% endfor %}
+  </div>
+
+  <div class="panel" style="margin-top:0">
+    <div class="cmt-head">추천을 많이 받은 글</div>
+
+    {% for p in popular %}
+      <div class="cmt">
+        <div class="cmt-top">
+          <a href="{% url 'post_detail' p.post_id %}"><b>{{ p.title }}</b></a>
+          <span class="tag">👍 {{ p.like_count }}</span>
+          <time>{{ p.created_at|date:"m-d" }}</time>
+        </div>
+        <p>
+          {{ p.board.board_name }} ·
+          {% if p.board.is_anonymous %}익명{% else %}{{ p.writer.member_name }}{% endif %}
+        </p>
+      </div>
+    {% empty %}
+      <div class="cmt gone"><p>아직 추천받은 글이 없습니다.</p></div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

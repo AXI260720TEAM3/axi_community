@@ -37,6 +37,31 @@ def post_detail(request, post_id):
     )
 
 
+# ---- 첨부파일 제한
+# 실행 파일이나 너무 큰 파일이 올라가지 않게 막습니다.
+MAX_UPLOAD_SIZE = 10 * 1024 * 1024          # 한 파일 10MB
+ALLOWED_EXTENSIONS = {
+    ".jpg", ".jpeg", ".png", ".gif", ".webp",
+    ".pdf", ".hwp", ".hwpx", ".doc", ".docx",
+    ".xls", ".xlsx", ".ppt", ".pptx",
+    ".txt", ".csv", ".md", ".sql", ".zip",
+}
+
+
+def attachment_error(files):
+    """첨부가 규칙에 맞는지 봅니다. 문제가 있으면 사용자에게 보여줄 문구를, 없으면 None 을 돌려줍니다."""
+    for f in files:
+        ext = "." + f.name.rsplit(".", 1)[-1].lower() if "." in f.name else ""
+
+        if ext not in ALLOWED_EXTENSIONS:
+            return f"'{f.name}' 은(는) 올릴 수 없는 형식입니다. 이미지·문서·압축 파일만 올릴 수 있습니다."
+
+        if f.size > MAX_UPLOAD_SIZE:
+            return f"'{f.name}' 의 크기가 너무 큽니다. 한 파일에 10MB 까지 올릴 수 있습니다."
+
+    return None
+
+
 @login_required
 def post_create(request, board_id):
     board = get_object_or_404(Board, pk=board_id)
@@ -56,13 +81,21 @@ def post_create(request, board_id):
             return render(request, "board/form.html",
                           {"board":board,"title":title,"content":content})
 
+        files = request.FILES.getlist("files")
+        error = attachment_error(files)
+
+        if error:
+            messages.error(request, error, extra_tags="alert")
+            return render(request, "board/form.html",
+                          {"board":board,"title":title,"content":content})
+
         post = Post.objects.create(
             board=board,
             writer=request.user,
             title=title,
             content=content,
         )
-        for f in request.FILES.getlist("files"):
+        for f in files:
             Attachment.objects.create(
                 post=post,
                 origin_name=f.name,
@@ -72,10 +105,6 @@ def post_create(request, board_id):
         return redirect("post_detail",post_id=post.post_id)
     
     return render(request, "board/form.html",{"board": board})
-    # TODO [A] 작성 권한 확인(permissions.can_write) → 폼 검증 → 저장 → 첨부파일 처리
-    #          첨부파일은 request.FILES.getlist('files') 로 여러 개를 받습니다.
-    #          form 태그에 enctype="multipart/form-data" 가 없으면 파일이 안 넘어옵니다.
-    # raise NotImplementedError("post_create — [A] 팀장 담당")
 
 
 @login_required
@@ -99,6 +128,19 @@ def post_update(request, post_id):
                 "nav_current": post.board_id,
             })
 
+        files = request.FILES.getlist("files")
+        error = attachment_error(files)
+
+        if error:
+            messages.error(request, error, extra_tags="alert")
+            return render(request, "board/edit.html", {
+                "post": post,
+                "title": title,
+                "content": content,
+                "attachments": post.attachments.all(),
+                "nav_current": post.board_id,
+            })
+
         post.title = title
         post.content = content
         post.updated_at = timezone.now()
@@ -111,7 +153,7 @@ def post_update(request, post_id):
             a.delete()                         # DB 의 행
 
         # 새로 추가한 첨부 저장 — 글쓰기와 같은 코드
-        for f in request.FILES.getlist("files"):
+        for f in files:
             Attachment.objects.create(
                 post=post,
                 origin_name=f.name,

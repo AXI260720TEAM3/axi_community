@@ -126,6 +126,16 @@
   </div>
 </div>
 
+<!-- ================= 회원탈퇴 영역 (페이지 최하단) ================= -->
+<div style="margin-top: 30px; text-align: right;">
+  <form id="delete-account-form" action="{% url 'account_delete' %}" method="post" style="display: inline;">
+    {% csrf_token %}
+    <button type="button" class="btn quiet" style="color: #d9534f; border-color: #d9534f;" onclick="confirmDeleteAccount()">
+      회원탈퇴
+    </button>
+  </form>
+</div>
+
 <!-- AJAX 자바스크립트 스크립트 추가 -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -172,5 +182,14 @@ document.addEventListener('DOMContentLoaded', function () {
   // 초기 실행
   loadMyPosts('자유게시판');
 });
+
+// 회원탈퇴 확인 함수
+function confirmDeleteAccount() {
+  if (confirm('정말로 회원탈퇴를 진행하시겠습니까?\n탈퇴 시 회원 정보 및 모든 활동 기록이 영구적으로 삭제됩니다.')) {
+    document.getElementById('delete-account-form').submit();
+  }
+}
+
+
 </script>
 {% endblock %}

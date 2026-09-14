@@ -4,8 +4,6 @@
 화면 URL 은 community/urls.py 에 모아두었습니다. 여기는 건드릴 일이 거의 없습니다.
 """
 
-from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
@@ -14,7 +12,7 @@ urlpatterns = [
     path('', include('community.urls')),
 ]
 
-# 개발 중에만 업로드된 첨부파일을 Django 가 직접 내려줍니다.
-# 배포할 때는 웹서버가 대신 처리하므로 이 줄은 동작하지 않습니다.
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# 업로드된 첨부파일은 /media/ 주소로 직접 내려주지 않습니다.
+# 그렇게 하면 로그인하지 않아도 받아지고, .html 파일을 올렸을 때
+# 우리 사이트 안에서 그대로 열려 스크립트가 실행될 수 있습니다.
+# 다운로드는 attachment_download 뷰(권한 확인 + 항상 저장)만 통과합니다.

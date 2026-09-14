@@ -25,6 +25,7 @@
       <span>{{ post.created_at|date:"Y년 n월 j일 H:i" }}</span>
       {% if post.updated_at %}<span>수정됨</span>{% endif %}
       {% if attachments %}<span>첨부 {{ attachments|length }}</span>{% endif %}
+      <span>조회 {{ post.view_count }}</span>
     </div>
   </div>
 

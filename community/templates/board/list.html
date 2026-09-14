@@ -37,7 +37,11 @@
            aria-label="게시글 검색">
     <button type="submit">검색</button>
   </div>
-  <span class="selectish">최신순</span>
+  <select class="selectish" name="sort" aria-label="정렬 기준" onchange="this.form.submit()">
+    {% for key, option in sort_options.items %}
+      <option value="{{ key }}" {% if sort == key %}selected{% endif %}>{{ option.0 }}</option>
+    {% endfor %}
+  </select>
 </form>
 
 <table class="list">
@@ -97,16 +101,16 @@
 {% if page.paginator.num_pages > 1 %}
 <div class="pager">
   {% if page.has_previous %}
-    <a class="btn ghost" href="?page={{ page.previous_page_number }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}{% if search_type == 'writer' %}&type=writer{% endif %}">이전</a>
+    <a class="btn ghost" href="?page={{ page.previous_page_number }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}{% if search_type == 'writer' %}&type=writer{% endif %}{% if sort != 'new' %}&sort={{ sort }}{% endif %}">이전</a>
   {% endif %}
 
   {% for n in page.paginator.page_range %}
-    <a href="?page={{ n }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}{% if search_type == 'writer' %}&type=writer{% endif %}"
+    <a href="?page={{ n }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}{% if search_type == 'writer' %}&type=writer{% endif %}{% if sort != 'new' %}&sort={{ sort }}{% endif %}"
        {% if n == page.number %}aria-current="true"{% endif %}>{{ n }}</a>
   {% endfor %}
 
   {% if page.has_next %}
-    <a class="btn ghost" href="?page={{ page.next_page_number }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}{% if search_type == 'writer' %}&type=writer{% endif %}">다음</a>
+    <a class="btn ghost" href="?page={{ page.next_page_number }}{% if keyword %}&q={{ keyword|urlencode }}{% endif %}{% if search_type == 'writer' %}&type=writer{% endif %}{% if sort != 'new' %}&sort={{ sort }}{% endif %}">다음</a>
   {% endif %}
 </div>
 {% endif %}

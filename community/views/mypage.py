@@ -105,3 +105,4 @@ def my_posts_ajax(request):
 
   context = {'posts': posts}
   return render(request, 'account/partials/my_post_list.html', context)
+

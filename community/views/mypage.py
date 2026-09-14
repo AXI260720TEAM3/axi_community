@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth import update_session_auth_hash, logout
 from django.contrib.auth.decorators import login_required
 
 from community.models import Post, Board, Message
@@ -106,3 +106,20 @@ def my_posts_ajax(request):
   context = {'posts': posts}
   return render(request, 'account/partials/my_post_list.html', context)
 
+@login_required
+def account_delete(request):
+    """회원 탈퇴 처리 (소프트 삭제)"""
+    if request.method == 'POST':
+        user = request.user
+        
+        # 계정 비활성화 처리
+        user.is_active = False
+        user.save()
+        
+        # 로그아웃
+        logout(request)
+        
+        messages.success(request, "회원 탈퇴가 완료되었습니다. 그동안 이용해 주셔서 감사합니다.")
+        return redirect('home')
+
+    return redirect('mypage')

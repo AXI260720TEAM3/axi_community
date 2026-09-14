@@ -31,6 +31,11 @@ def board_list(request, board_id):
         return redirect("qna_list")
 
     keyword = request.GET.get("q", "").strip()
+    search_type = request.GET.get("type","all")
+
+    # 익명게시판에서 작성자 검색을 허용하면 이름으로 글쓴이를 특정할 수 있어 익명성이 깨집니다
+    if board.is_anonymous or search_type not in ("all", "writer"):
+        search_type = "all"
 
     posts = (
         Post.objects.visible()
@@ -46,7 +51,10 @@ def board_list(request, board_id):
     )
 
     if keyword:
-        posts = posts.filter(Q(title__icontains=keyword) | Q(content__icontains=keyword))
+        if search_type == "writer":
+            posts = posts.filter(writer__member_name__icontains=keyword)
+        else:
+            posts = posts.filter(Q(title__icontains=keyword) | Q(content__icontains=keyword))
 
     # annotate() 가 GROUP BY 를 붙이면 Meta.ordering 이 무효가 됩니다.
     # 정렬을 명시하지 않으면 페이지마다 순서가 달라질 수 있습니다.
@@ -61,6 +69,7 @@ def board_list(request, board_id):
             "board": board,
             "page": page,
             "keyword": keyword,
+            "search_type": search_type,
             "can_write": can_write(request.user, board),
             "denied_reason": write_denied_reason(board),
             "nav_current": board.board_id,

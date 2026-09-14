@@ -63,6 +63,10 @@ h2{font-size:17px;font-weight:700;letter-spacing:-.02em}
 .tag.notice{background:var(--mark);border-color:var(--mark);color:#fff}
 .tag.answer{background:var(--chalk-soft);border-color:#BFD6CD;color:var(--chalk)}
 .tag.open{border-color:#C9A227;color:#8A6D08}
+.tag.type-staff{background:var(--mark);border-color:var(--mark);color:#fff}
+.tag.type-mentor{background:var(--chalk-soft);border-color:#BFD6CD;color:var(--chalk)}
+.tag.type-teacher{background:#E7EDF9;border-color:#C3D2EC;color:#2F4F8F}
+.tag.type-student{background:var(--wash);border-color:var(--rule);color:var(--muted)}
 
 /* ---------- 목록 ---------- */
 .filters{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
@@ -79,7 +83,8 @@ table.list td{padding:12px 14px;border-bottom:1px solid #EDF1EF;font-size:14px;v
 table.list tr:last-child td{border-bottom:0}
 table.list tr:hover td{background:#FAFBFA}
 .col-no{width:56px;color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px}
-.col-writer{width:110px;font-size:13.5px}
+.col-writer{width:150px;font-size:13.5px;white-space:nowrap}
+.col-writer .tag{margin-left:5px;font-size:10.5px;padding:1px 5px;vertical-align:1px}
 .col-date{width:92px;color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
 .subject{font-weight:500}
 .subject a:hover{color:var(--chalk);text-decoration:underline;text-underline-offset:3px}

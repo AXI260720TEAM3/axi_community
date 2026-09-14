@@ -25,11 +25,30 @@ def comment_create(request, post_id):
 
     if request.method == "POST":
         content = request.POST.get("content", "").strip()
+        parent_id = request.POST.get("parent_id", "").strip()
+
+        parent = None
+
+        if parent_id:
+            parent = get_object_or_404(
+                PostComment,
+                comment_id=parent_id,
+                post=post,
+                is_deleted=False,
+            )
+
+            # 대댓글의 대댓글은 막고 1단계까지만 허용
+            if parent.parent_id is not None:
+                return redirect(
+                    "post_detail",
+                    post_id=post_id,
+                )
 
         if content:
             PostComment.objects.create(
                 post=post,
                 writer=request.user,
+                parent=parent,
                 content=content,
             )
 

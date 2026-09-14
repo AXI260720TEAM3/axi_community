@@ -140,11 +140,17 @@ class Member(AbstractUser):
 # ================================================================ 게시판
 
 class Board(models.Model):
-    """공지사항 / 자유게시판 / Q&A / 취업정보"""
+    """공지사항 / 자유게시판 / Q&A / 취업정보 / 익명게시판"""
 
     board_id = models.AutoField(primary_key=True)
     board_name = models.CharField("게시판명", max_length=50, unique=True)
     allow_comment = models.BooleanField("댓글 허용", default=True)
+    is_anonymous = models.BooleanField(
+        "익명 게시판",
+        default=False,
+        db_default=False,
+        help_text="켜면 글 작성자를 화면에서 가립니다. 댓글 작성자는 그대로 보입니다.",
+    )
 
     class Meta:
         db_table = "board"
@@ -248,6 +254,16 @@ class Post(models.Model):
     created_at = models.DateTimeField("작성일시", auto_now_add=True)
     updated_at = models.DateTimeField("수정일시", null=True, blank=True)
     is_deleted = models.BooleanField("삭제 여부", default=False)
+    view_count = models.PositiveIntegerField("조회수", default=0, db_default=0)
+    accepted_answer = models.OneToOneField(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accepted_for",
+        verbose_name="채택된 답변",
+        help_text="Q&A 질문에만 씁니다. 값이 있으면 '해결됨' 상태입니다.",
+    )
 
     objects = PostQuerySet.as_manager()
 
@@ -271,7 +287,12 @@ class Post(models.Model):
 
 
 class PostComment(models.Model):
-    """댓글. Q&A 게시판(allow_comment=False)에는 달 수 없습니다."""
+    """
+    댓글. Q&A 게시판(allow_comment=False)에는 달 수 없습니다.
+
+    대댓글은 parent 로 원 댓글을 가리킵니다. 한 단계만 씁니다.
+    원 댓글만 뽑을 때는 parent__isnull=True 로 거릅니다.
+    """
 
     comment_id = models.AutoField(primary_key=True)
     post = models.ForeignKey(
@@ -282,6 +303,15 @@ class PostComment(models.Model):
         on_delete=models.PROTECT,
         related_name="comments",
         verbose_name="작성자",
+    )
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        db_column="parent_comment_id",
+        related_name="replies",
+        verbose_name="원 댓글",
     )
     content = models.TextField("내용")
     created_at = models.DateTimeField("작성일시", auto_now_add=True)
@@ -375,4 +405,192 @@ class Message(models.Model):
         if self.sender_deleted and self.receiver_deleted:
             self.delete()
         else:
-            self.save(update_fields=["sender_deleted", "receiver_deleted"])    
+            self.save(update_fields=["sender_deleted", "receiver_deleted"])
+
+
+# ================================================================ 반응 (북마크 · 추천)
+
+class Bookmark(models.Model):
+    """회원이 나중에 다시 보려고 저장해 둔 게시글."""
+
+    bookmark_id = models.AutoField(primary_key=True)
+    member = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="bookmarks",
+        verbose_name="회원",
+    )
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE, related_name="bookmarks", verbose_name="게시글"
+    )
+    created_at = models.DateTimeField("저장일시", auto_now_add=True)
+
+    class Meta:
+        db_table = "bookmark"
+        verbose_name = "북마크"
+        verbose_name_plural = "북마크"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["member", "post"], name="uq_bookmark"),
+        ]
+
+    def __str__(self):
+        return f"{self.member} ☆ {self.post}"
+
+
+class PostLike(models.Model):
+    """게시글 추천('도움이 돼요'). 한 사람이 한 글에 한 번만 누를 수 있습니다."""
+
+    like_id = models.AutoField(primary_key=True)
+    member = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="post_likes",
+        verbose_name="회원",
+    )
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE, related_name="likes", verbose_name="게시글"
+    )
+    created_at = models.DateTimeField("누른일시", auto_now_add=True)
+
+    class Meta:
+        db_table = "post_like"
+        verbose_name = "추천"
+        verbose_name_plural = "추천"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["member", "post"], name="uq_post_like"),
+        ]
+
+    def __str__(self):
+        return f"{self.member} 👍 {self.post}"
+
+
+# ================================================================ 알림
+
+class Notification(models.Model):
+    """
+    회원에게 보여줄 알림 한 건.
+
+    만드는 쪽에서는 Notification.notify(...) 한 줄만 부르면 됩니다.
+        Notification.notify(post.writer, Notification.Kind.COMMENT,
+                            f"'{post.title}' 글에 댓글이 달렸습니다.",
+                            reverse("post_detail", args=[post.post_id]),
+                            actor=request.user)
+    """
+
+    class Kind(models.TextChoices):
+        MESSAGE = "쪽지", "쪽지"
+        COMMENT = "댓글", "댓글"
+        ANSWER = "답변", "답변"
+        RECRUIT = "모집", "모집"
+
+    notification_id = models.AutoField(primary_key=True)
+    receiver = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="notifications",
+        verbose_name="받는 사람",
+    )
+    kind = models.CharField("종류", max_length=10, choices=Kind.choices)
+    message = models.CharField("문구", max_length=200)
+    link = models.CharField("이동할 주소", max_length=200, blank=True)
+    created_at = models.DateTimeField("생성일시", auto_now_add=True)
+    read_at = models.DateTimeField("읽음일시", null=True, blank=True)
+
+    class Meta:
+        db_table = "notification"
+        verbose_name = "알림"
+        verbose_name_plural = "알림"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["receiver", "-created_at"], name="ix_notification_receiver"),
+        ]
+
+    def __str__(self):
+        return f"{self.receiver} · {self.kind}"
+
+    @classmethod
+    def notify(cls, receiver, kind, message, link="", actor=None):
+        """알림 한 건 생성. 내가 한 일로 나에게 알림이 가지 않게 actor 를 넘기세요."""
+        if receiver is None or (actor is not None and actor == receiver):
+            return None
+        return cls.objects.create(
+            receiver=receiver, kind=kind, message=message, link=link
+        )
+
+
+# ================================================================ 팀원 모집
+
+class Recruit(models.Model):
+    """프로젝트 팀원 모집 카드. 게시글이 아니라 별도 표로 관리합니다."""
+
+    recruit_id = models.AutoField(primary_key=True)
+    writer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="recruits",
+        verbose_name="작성자",
+    )
+    title = models.CharField("제목", max_length=250)
+    content = models.TextField("소개")
+    field = models.CharField("모집 분야", max_length=50)
+    headcount = models.PositiveSmallIntegerField("모집 인원", default=1)
+    deadline = models.DateField("마감일")
+    created_at = models.DateTimeField("작성일시", auto_now_add=True)
+    is_closed = models.BooleanField("모집 마감", default=False)
+    is_deleted = models.BooleanField("삭제 여부", default=False)
+
+    class Meta:
+        db_table = "recruit"
+        verbose_name = "팀원 모집"
+        verbose_name_plural = "팀원 모집"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def approved_count(self):
+        """승인된 지원자 수"""
+        return self.applications.filter(status=RecruitApplication.Status.APPROVED).count()
+
+
+class RecruitApplication(models.Model):
+    """모집 카드에 넣은 지원. 같은 모집에 두 번 지원할 수 없습니다."""
+
+    class Status(models.TextChoices):
+        WAITING = "대기", "대기"
+        APPROVED = "승인", "승인"
+        REJECTED = "거절", "거절"
+
+    application_id = models.AutoField(primary_key=True)
+    recruit = models.ForeignKey(
+        Recruit, on_delete=models.CASCADE, related_name="applications", verbose_name="모집"
+    )
+    applicant = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="recruit_applications",
+        verbose_name="지원자",
+    )
+    message = models.TextField("지원 메시지", blank=True)
+    status = models.CharField(
+        "상태", max_length=10, choices=Status.choices, default=Status.WAITING
+    )
+    applied_at = models.DateTimeField("지원일시", auto_now_add=True)
+    decided_at = models.DateTimeField("처리일시", null=True, blank=True)
+
+    class Meta:
+        db_table = "recruit_application"
+        verbose_name = "모집 지원"
+        verbose_name_plural = "모집 지원"
+        ordering = ["applied_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["recruit", "applicant"], name="uq_recruit_application"
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.recruit} ← {self.applicant} ({self.status})"

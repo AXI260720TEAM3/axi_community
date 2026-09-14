@@ -26,11 +26,13 @@ INSERT INTO `user_type` (`type_id`, `type_name`) VALUES
 
 -- ---------- 게시판
 -- Q&A 는 댓글을 달 수 없으므로 allow_comment = FALSE
-INSERT INTO `board` (`board_id`, `board_name`, `allow_comment`) VALUES
-	(1, '공지사항',   TRUE),
-	(2, '자유게시판', TRUE),
-	(3, 'Q&A',        FALSE),
-	(4, '취업정보',   TRUE);
+-- 익명게시판은 글쓴이를 화면에서 가립니다(is_anonymous). 댓글 작성자는 그대로 보입니다.
+INSERT INTO `board` (`board_id`, `board_name`, `allow_comment`, `is_anonymous`) VALUES
+	(1, '공지사항',   TRUE,  FALSE),
+	(2, '자유게시판', TRUE,  FALSE),
+	(3, 'Q&A',        FALSE, FALSE),
+	(4, '취업정보',   TRUE,  FALSE),
+	(5, '익명게시판', TRUE,  TRUE);
 
 -- ---------- 작성 권한
 -- 여기 있는 조합만 허용됩니다. 없는 조합은 자동으로 금지입니다.
@@ -46,7 +48,8 @@ INSERT INTO `board_permission` (`board_id`, `type_id`, `permission_type`) VALUES
 	(3, 2, '답변'),   --              강사는 답변만
 	(4, 2, '일반'),   -- 취업정보   : 강사
 	(4, 3, '일반'),   --              멘토
-	(4, 4, '일반');   --              직원
+	(4, 4, '일반'),   --              직원
+	(5, 3, '일반');   -- 익명게시판 : 멘토(수료생)만 글쓰기, 댓글은 누구나
 
 -- ---------- 회원
 -- 비밀번호는 모두 test1234 를 SHA-256 으로 해시한 값입니다.  SHA2()는 MariaDB(또는 MySQL) DBMS에 내장되어 있는 SQL 함수
@@ -228,7 +231,7 @@ INSERT INTO `message`
 --    이걸 빼먹으면 새 글을 등록할 때 중복 키 오류가 납니다.
 -- =====================================================================
 ALTER TABLE `user_type`    AUTO_INCREMENT = 5;
-ALTER TABLE `board`        AUTO_INCREMENT = 5;
+ALTER TABLE `board`        AUTO_INCREMENT = 6;
 ALTER TABLE `member`       AUTO_INCREMENT = 13;
 ALTER TABLE `post`         AUTO_INCREMENT = 25;
 ALTER TABLE `post_comment` AUTO_INCREMENT = 19;

@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count, Prefetch, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from ..models import Attachment, Board, BoardPermission, Post
 from ..permissions import can_write
@@ -294,6 +295,56 @@ def qna_answer(request, post_id):
             "qna_detail",
             post_id=question.post_id,
         )
+
+    return redirect(
+        "qna_detail",
+        post_id=question.post_id,
+    )
+    
+@login_required
+@require_POST
+def qna_accept_answer(request, post_id, answer_id):
+    question = get_object_or_404(
+        Post.objects.visible().roots(),
+        post_id=post_id,
+        board__board_name=QNA_BOARD_NAME,
+    )
+
+    if question.writer_id != request.user.member_id:
+        messages.error(
+            request,
+            "질문 작성자만 답변을 채택할 수 있습니다.",
+        )
+        return redirect(
+            "qna_detail",
+            post_id=question.post_id,
+        )
+
+    answer = get_object_or_404(
+        Post.objects.visible(),
+        post_id=answer_id,
+        parent=question,
+    )
+
+    if question.accepted_answer_id is not None:
+        messages.error(
+            request,
+            "이미 채택된 답변이 있습니다.",
+        )
+        return redirect(
+            "qna_detail",
+            post_id=question.post_id,
+        )
+
+    question.accepted_answer = answer
+    question.save(
+        update_fields=["accepted_answer"]
+    )
+
+    messages.success(
+        request,
+        "답변을 채택했습니다.",
+    )
 
     return redirect(
         "qna_detail",

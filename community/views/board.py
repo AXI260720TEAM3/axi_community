@@ -37,6 +37,7 @@ def board_list(request, board_id):
     if board.is_anonymous or search_type not in ("all", "writer"):
         search_type = "all"
 
+    # like_count 카운팅을 쿼리셋 annotate()에 추가
     posts = (
         Post.objects.visible()
         .roots()
@@ -47,6 +48,7 @@ def board_list(request, board_id):
                 "comments", filter=Q(comments__is_deleted=False), distinct=True
             ),
             file_count=Count("attachments", distinct=True),
+            like_count=Count("likes", distinct=True),  # <-- 추천수 집계 추가
         )
     )
 

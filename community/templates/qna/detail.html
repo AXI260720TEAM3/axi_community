@@ -336,6 +336,29 @@
 
       <p>{{ a.content|linebreaksbr }}</p>
 
+      {% if question.accepted_answer_id == a.post_id %}
+  <div style="margin-top: 12px;">
+    <span class="tag">채택 완료</span>
+  </div>
+
+{% elif is_owner and not question.accepted_answer_id %}
+  <form
+    method="post"
+    action="{% url 'qna_accept_answer' question.post_id a.post_id %}"
+    style="margin-top: 12px;"
+    onsubmit="return confirm('이 답변을 채택하시겠습니까?');"
+  >
+    {% csrf_token %}
+
+    <button
+      type="submit"
+      class="btn quiet"
+    >
+      채택하기
+    </button>
+  </form>
+{% endif %}
+
       {% if a.attachments.all %}
         <div class="qna-attachments">
 

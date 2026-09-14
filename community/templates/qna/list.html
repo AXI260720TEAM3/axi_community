@@ -77,11 +77,21 @@
             </span>
           {% endif %}
 
-          {% if q.answer_count == 0 %}
-            <span class="tag open">
-              답변 대기
-            </span>
-          {% endif %}
+          {% if q.accepted_answer_id %}
+         <span class="tag answer">
+            채택 완료
+          </span>
+
+        {% elif q.answer_count > 0 %}
+          <span class="tag answer">
+            답변 있음
+          </span>
+
+        {% else %}
+          <span class="tag open">
+            답변 대기
+          </span>
+        {% endif %}
 
         </td>
 

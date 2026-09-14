@@ -51,10 +51,13 @@
           {% if p.file_count %}<span class="meta-inline">첨부 {{ p.file_count }}</span>{% endif %}
         </td>
         <td class="col-writer">
-          {% if user.is_authenticated and p.writer_id != user.pk %}
+          {% if board.is_anonymous %}
+            익명
+          {% elif user.is_authenticated and p.writer_id != user.pk %}
             <a class="message-open" href="{% url 'message_box' %}?receiver={{ p.writer.username|urlencode }}"
                data-receiver="{{ p.writer.username }}" data-name="{{ p.writer.member_name }}">{{ p.writer.member_name }}</a>
-          {% else %}{{ p.writer.member_name }}{% endif %}
+            {% include "_usertype.html" with member=p.writer %}
+          {% else %}{{ p.writer.member_name }} {% include "_usertype.html" with member=p.writer %}{% endif %}
         </td>
         <td class="col-date">{{ p.created_at|date:"m-d" }}</td>
       </tr>

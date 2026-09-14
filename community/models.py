@@ -39,6 +39,14 @@ from django.utils import timezone
 
 class UserType(models.Model):    # <- 객체(모델) 이름
     """수강생 / 강사 / 멘토 / 직원"""
+
+    BADGE_CLASSES = {
+        "직원": "type-staff",
+        "강사": "type-teacher",
+        "멘토": "type-mentor",
+        "수강생": "type-student",
+    }
+
     # 필드(속성) 이름들
     type_id = models.AutoField(primary_key=True)
     type_name = models.CharField("유형명", max_length=50, unique=True)
@@ -50,6 +58,11 @@ class UserType(models.Model):    # <- 객체(모델) 이름
 
     def __str__(self):
         return self.type_name
+
+    @property
+    def badge_class(self):
+        """화면에서 쓸 배지 색 클래스. 유형이 늘어나면 여기만 고치면 됩니다."""
+        return self.BADGE_CLASSES.get(self.type_name, "")
 
 
 class MemberManager(UserManager):

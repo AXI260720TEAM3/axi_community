@@ -29,7 +29,7 @@
           <b>{{ c.writer.member_name }}</b>
         {% endif %}
 
-        <span class="tag">{{ c.writer.user_type.type_name }}</span>
+        {% include "_usertype.html" with member=c.writer %}
         <time>{{ c.created_at|date:"n월 j일 H:i" }}</time>
 
         {% if c.writer_id == user.member_id %}

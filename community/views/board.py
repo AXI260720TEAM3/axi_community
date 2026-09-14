@@ -36,7 +36,7 @@ def board_list(request, board_id):
         Post.objects.visible()
         .roots()
         .filter(board=board)
-        .select_related("writer")
+        .select_related("writer", "writer__user_type")
         .annotate(
             comment_count=Count(
                 "comments", filter=Q(comments__is_deleted=False), distinct=True

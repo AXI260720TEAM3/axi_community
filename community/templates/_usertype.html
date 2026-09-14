@@ -1,0 +1,2 @@
+{% comment %} 회원유형 배지. 사용법: {% include "_usertype.html" with member=post.writer %} {% endcomment %}
+{% if member.user_type %}<span class="tag {{ member.user_type.badge_class }}">{{ member.user_type.type_name }}</span>{% endif %}

@@ -340,6 +340,12 @@ class Message(models.Model):
     content = models.TextField("내용")
     sent_at = models.DateTimeField("발송일시", auto_now_add=True)
     read_at = models.DateTimeField("읽음일시", null=True, blank=True)
+    sender_deleted = models.BooleanField(
+        "보낸 사람이 삭제", default=False, db_default=False
+    )
+    receiver_deleted = models.BooleanField(
+        "받는 사람이 삭제", default=False, db_default=False
+    )
 
     class Meta:
         db_table = "message"
@@ -356,3 +362,17 @@ class Message(models.Model):
     @property
     def is_read(self):
         return self.read_at is not None
+    
+    def delete_for(self, user):
+        """내 쪽지함에서만 지웁니다. 양쪽이 모두 지우면 행을 실제로 삭제합니다."""
+        if user == self.sender:
+            self.sender_deleted = True
+        elif user == self.receiver:
+            self.receiver_deleted = True
+        else:
+            return
+
+        if self.sender_deleted and self.receiver_deleted:
+            self.delete()
+        else:
+            self.save(update_fields=["sender_deleted", "receiver_deleted"])    

@@ -213,27 +213,38 @@ def attachment_download(request, attachment_id):
 
 @login_required
 def post_like(request, post_id):
-    """게시글 추천 / 추천 취소 토글 함수"""
-    if request.method == "POST":
-        post = get_object_or_404(Post, pk=post_id)
+  """게시글 / Q&A 질문 / 답변 추천 및 추천 취소 토글 함수"""
+  post = get_object_or_404(Post, pk=post_id)
 
-        # 1. 본인 작성 글 추천 불가 처리 (선택 사항)
-        if post.writer == request.user:
-            messages.error(request, "본인이 작성한 글은 추천할 수 없습니다.")
-            return redirect('post_detail', post_id=post.post_id)
+  # [리다이렉트 목적지 계산 함수]
+  def get_redirect_response():
+    # Q&A 게시판의 글인 경우
+    if post.board and post.board.board_name == "Q&A":
+      # 답변글(parent가 있음)을 추천했으면 원본 질문 ID로, 질문글이면 본인 ID로 이동
+      target_q_id = post.parent_id if post.parent_id else post.post_id
+      return redirect("qna_detail", post_id=target_q_id)
 
-        # 2. 이미 추천했는지 확인
-        like_qs = PostLike.objects.filter(member=request.user, post=post)
+    # 일반 게시판 글인 경우
+    return redirect("post_detail", post_id=post.post_id)
 
-        if like_qs.exists():
-            # 이미 눌렀으면 삭제 (추천 취소)
-            like_qs.delete()
-            messages.success(request, "추천을 취소했습니다.")
-        else:
-            # 안 눌렀으면 생성 (추천 등록)
-            PostLike.objects.create(member=request.user, post=post)
-            messages.success(request, "게시글을 추천했습니다.")
+  if request.method == "POST":
+    # 1. 본인 작성 글 추천 불가 처리
+    if post.writer == request.user:
+      messages.error(request, "본인이 작성한 글은 추천할 수 없습니다.")
+      return get_redirect_response()
 
-        return redirect('post_detail', post_id=post.post_id)
+    # 2. 이미 추천했는지 확인
+    like_qs = PostLike.objects.filter(member=request.user, post=post)
 
-    return redirect('post_detail', post_id=post_id)
+    if like_qs.exists():
+      # 이미 눌렀으면 삭제 (추천 취소)
+      like_qs.delete()
+      messages.success(request, "추천을 취소했습니다.")
+    else:
+      # 안 눌렀으면 생성 (추천 등록)
+      PostLike.objects.create(member=request.user, post=post)
+      messages.success(request, "게시글을 추천했습니다.")
+
+    return get_redirect_response()
+
+  return get_redirect_response()

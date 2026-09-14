@@ -70,16 +70,24 @@
     font-size: 14px;
   }
 
+  /* 추천 버튼 및 작업 버튼 영역 스타일 */
+  .qna-actions-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-top: 1px solid #ddd;
+  }
+
   .qna-owner-actions {
     display: flex;
     justify-content: flex-end;
     align-items: center;
     gap: 10px;
-    padding: 16px 24px;
-    border-top: 1px solid #ddd;
   }
 
-  .qna-owner-actions form {
+  .qna-owner-actions form,
+  .qna-like-action form {
     margin: 0;
   }
 
@@ -120,6 +128,16 @@
 
   .qna-answer-panel {
     margin-top: 18px;
+  }
+
+  /* 답변 하단 푸터 스타일 */
+  .cmt-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed #eee;
   }
 
 </style>
@@ -176,6 +194,9 @@
       {% if question.updated_at %}
         <span>수정됨</span>
       {% endif %}
+
+      <!-- 질문 추천수 표시 -->
+      <span style="color: #007bff; font-weight: bold;"> 추천 {{ question.likes.count }}</span>
     </div>
 
   </div>
@@ -209,36 +230,50 @@
   {% endif %}
 
 
-  {% if is_owner %}
-    <div class="qna-owner-actions">
-
-      <button
-        type="button"
-        class="btn quiet"
-        id="qna-edit-open"
-      >
-        수정
-      </button>
-
-      <form
-        method="post"
-        onsubmit="return confirm('이 질문을 삭제하시겠습니까?');"
-      >
-        {% csrf_token %}
-
-        <button
-          type="submit"
-          class="btn quiet"
-          name="action"
-          value="delete"
-        >
-          삭제
-        </button>
-      </form>
-
+  <!-- 질문 하단 버튼 영역 (추천 버튼 + 작성자 수정/삭제 버튼) -->
+  <div class="qna-actions-bar">
+    <div class="qna-like-action">
+      {% if user.is_authenticated %}
+        <form method="post" action="{% url 'post_like' question.post_id %}">
+          {% csrf_token %}
+          <button type="submit" class="btn quiet sm" style="display: inline-flex; align-items: center; gap: 4px;">
+             추천 <b>{{ question.likes.count }}</b>
+          </button>
+        </form>
+      {% endif %}
     </div>
 
+    {% if is_owner %}
+      <div class="qna-owner-actions">
+        <button
+          type="button"
+          class="btn quiet"
+          id="qna-edit-open"
+        >
+          수정
+        </button>
 
+        <form
+          method="post"
+          onsubmit="return confirm('이 질문을 삭제하시겠습니까?');"
+        >
+          {% csrf_token %}
+
+          <button
+            type="submit"
+            class="btn quiet"
+            name="action"
+            value="delete"
+          >
+            삭제
+          </button>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+
+
+  {% if is_owner %}
     <form
       method="post"
       class="qna-edit-form"
@@ -336,31 +371,8 @@
 
       <p>{{ a.content|linebreaksbr }}</p>
 
-      {% if question.accepted_answer_id == a.post_id %}
-  <div style="margin-top: 12px;">
-    <span class="tag">채택 완료</span>
-  </div>
-
-{% elif is_owner and not question.accepted_answer_id %}
-  <form
-    method="post"
-    action="{% url 'qna_accept_answer' question.post_id a.post_id %}"
-    style="margin-top: 12px;"
-    onsubmit="return confirm('이 답변을 채택하시겠습니까?');"
-  >
-    {% csrf_token %}
-
-    <button
-      type="submit"
-      class="btn quiet"
-    >
-      채택하기
-    </button>
-  </form>
-{% endif %}
-
       {% if a.attachments.all %}
-        <div class="qna-attachments">
+        <div class="qna-attachments" style="margin-top: 12px;">
 
           <div class="qna-attachments-title">
             첨부파일
@@ -380,6 +392,42 @@
 
         </div>
       {% endif %}
+
+      <!-- 답변 하단 영역 (채택 버튼 및 답변 추천 버튼) -->
+      <div class="cmt-foot">
+        <div class="qna-like-action">
+          {% if user.is_authenticated %}
+            <form method="post" action="{% url 'post_like' a.post_id %}">
+              {% csrf_token %}
+              <button type="submit" class="btn quiet sm" style="display: inline-flex; align-items: center; gap: 4px;">
+                 추천 <b>{{ a.likes.count }}</b>
+              </button>
+            </form>
+          {% endif %}
+        </div>
+
+        <div>
+          {% if question.accepted_answer_id == a.post_id %}
+            <span class="tag">채택 완료</span>
+
+          {% elif is_owner and not question.accepted_answer_id %}
+            <form
+              method="post"
+              action="{% url 'qna_accept_answer' question.post_id a.post_id %}"
+              onsubmit="return confirm('이 답변을 채택하시겠습니까?');"
+            >
+              {% csrf_token %}
+
+              <button
+                type="submit"
+                class="btn quiet"
+              >
+                채택하기
+              </button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
 
     </div>
 

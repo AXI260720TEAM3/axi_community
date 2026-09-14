@@ -1,15 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ post.title }} · 기회를 IT-DA{% endblock %}
 
-{% comment %} ----------------------------------------------------------------
-   [A] 팀장 담당 화면입니다. 읽기는 동작하도록 연결해두었습니다.
-
-   남은 작업
-     [A] 수정 · 삭제 버튼을 실제 동작으로 (post_update / post_delete)
-     [A] 첨부파일 다운로드 링크 (attachment_download)
-     [C] 댓글 등록 · 삭제 (comment_create / comment_delete)
-   ---------------------------------------------------------------- {% endcomment %}
-
 {% block content %}
 <div class="head">
   <div class="crumb"><a href="{% url 'board_list' post.board_id %}">{{ post.board.board_name }}</a> · 게시글</div>
@@ -21,15 +12,14 @@
     <h1>{{ post.title }}</h1>
     <div class="post-meta">
       <span>
-        {% if user.is_authenticated and not is_owner %}
-          <a class="message-open" href="{% url 'message_box' %}?receiver={{ post.writer.username|urlencode }}"
-             data-receiver="{{ post.writer.username }}" data-name="{{ post.writer.member_name }}">{{ post.writer.member_name }}</a>
-        {% else %}{{ post.writer.member_name }}{% endif %}
-        · {{ post.writer.user_type.type_name }}
+        {{ post.writer.member_name }} · {{ post.writer.user_type.type_name }}
       </span>
       <span>{{ post.created_at|date:"Y년 n월 j일 H:i" }}</span>
       {% if post.updated_at %}<span>수정됨</span>{% endif %}
       {% if attachments %}<span>첨부 {{ attachments|length }}</span>{% endif %}
+      
+      <!-- 상단 메타에 추천수 추가 (PostLike 모델의 related_name인 likes 활용) -->
+      <span style="color: #007bff; font-weight: bold;"> 추천 {{ post.likes.count }}</span>
     </div>
   </div>
 
@@ -41,7 +31,6 @@
   <div class="files">
     <h5>첨부파일</h5>
     {% for a in attachments %}
-      {# TODO [A] href 를 {% url 'attachment_download' a.attachment_id %} 로 바꾸세요 #}
       <div class="file">
         <a class="name" href="{% url 'attachment_download' a.attachment_id %}">{{ a.origin_name }}</a>
         <span class="size">{{ a.file_size|filesizeformat }}</span>
@@ -51,10 +40,18 @@
   {% endif %}
 
   <div class="post-foot">
-    {% if user.is_authenticated and not is_owner %}
-        <a class="btn quiet sm message-open" href="{% url 'message_box' %}?receiver={{ post.writer.username|urlencode }}"
-         data-receiver="{{ post.writer.username }}" data-name="{{ post.writer.member_name }}">쪽지 보내기</a>
-    {% endif %}
+    <!-- 하단 좌측: 추천 버튼 배치 (쪽지 버튼 대체) -->
+    <div class="left">
+      {% if user.is_authenticated %}
+        <form method="post" action="{% url 'post_like' post.post_id %}" style="display:inline">
+          {% csrf_token %}
+          <button type="submit" class="btn quiet sm" style="display: inline-flex; align-items: center; gap: 4px;">
+             추천 <b>{{ post.likes.count }}</b>
+          </button>
+        </form>
+      {% endif %}
+    </div>
+
     {% if is_owner %}
       <div class="right">
         <a class="btn quiet sm" href="{% url 'post_update' post.post_id %}">수정</a>
@@ -67,6 +64,5 @@
   </div>
 </article>
 
-{# 댓글 영역은 [C] 담당입니다. board/_comments.html 을 고치세요. #}
 {% include "board/_comments.html" %}
 {% endblock %}

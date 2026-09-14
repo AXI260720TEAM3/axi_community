@@ -26,6 +26,8 @@ urlpatterns = [
     path("posts/<int:post_id>/edit/", post.post_update, name="post_update"),
     path("posts/<int:post_id>/delete/", post.post_delete, name="post_delete"),
     path("attachments/<int:attachment_id>/", post.attachment_download, name="attachment_download"),
+    path("posts/<int:post_id>/like/", post.post_like, name="post_like"),
+
 
     # ---------------------------------------------------------------- [B] 계정
     path("accounts/login/", account.login_view, name="login"),

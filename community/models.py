@@ -37,9 +37,9 @@ from django.utils import timezone
 
 # ================================================================ 회원
 
-class UserType(models.Model):
+class UserType(models.Model):    # <- 객체(모델) 이름
     """수강생 / 강사 / 멘토 / 직원"""
-
+    # 필드(속성) 이름들
     type_id = models.AutoField(primary_key=True)
     type_name = models.CharField("유형명", max_length=50, unique=True)
 

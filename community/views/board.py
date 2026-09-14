@@ -9,18 +9,66 @@ from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 
-from ..models import Board, Post
+from ..models import Board, Member, Post
 from ..permissions import can_write, write_denied_reason
 
 PAGE_SIZE = 10
 
 
 def home(request):
-    """첫 화면. 자유게시판으로 보냅니다."""
-    free = Board.objects.filter(board_name="자유게시판").first()
-    if free:
-        return redirect("board_list", board_id=free.board_id)
-    return redirect("board_list", board_id=1)
+    """첫 화면. 게시판별 최근 글과 요약을 모아 보여줍니다."""
+    boards = {b.board_name: b for b in Board.objects.all()}
+
+    def recent(board_name, limit=5):
+        board = boards.get(board_name)
+        if board is None:
+            return []
+        return list(
+            Post.objects.visible().roots()
+            .filter(board=board)
+            .select_related("writer", "writer__user_type")
+            .order_by("-created_at")[:limit]
+        )
+
+    # 템플릿에서 그대로 반복할 수 있게 블록 목록으로 만들어 둡니다
+    sections = [
+        {"title": name, "board": boards.get(name), "posts": recent(name)}
+        for name in ("공지사항", "자유게시판", "취업정보", "익명게시판")
+    ]
+
+    qna_board = boards.get("Q&A")
+    waiting = []
+    if qna_board:
+        waiting = list(
+            Post.objects.visible().roots()
+            .filter(board=qna_board, accepted_answer__isnull=True)
+            .annotate(answer_count=Count("answers", filter=Q(answers__is_deleted=False)))
+            .filter(answer_count=0)
+            .select_related("writer")
+            .order_by("-created_at")[:5]
+        )
+
+    popular = list(
+        Post.objects.visible().roots()
+        .exclude(board__board_name="Q&A")
+        .select_related("board", "writer")
+        .annotate(like_count=Count("likes", distinct=True))
+        .filter(like_count__gt=0)
+        .order_by("-like_count", "-post_id")[:5]
+    )
+
+    return render(
+        request,
+        "home.html",
+        {
+            "sections": sections,
+            "waiting": waiting,
+            "popular": popular,
+            "total_posts": Post.objects.visible().roots().count(),
+            "total_members": Member.objects.filter(is_active=True).count(),
+            "nav_current": "home",
+        },
+    )
 
 
 def board_list(request, board_id):

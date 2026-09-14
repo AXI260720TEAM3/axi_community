@@ -237,3 +237,14 @@ textarea:focus{outline:none;border-color:var(--chalk)}
   .screens b{min-width:0}
   .screens a{flex-direction:column;gap:3px}
 }
+
+/* 공통 쪽지 팝업 */
+.message-modal{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);align-items:center;justify-content:center;padding:20px}
+.message-modal.open{display:flex}
+.message-modal-box{position:relative;width:min(460px,100%);max-height:90vh;overflow-y:auto;background:var(--paper);border-radius:12px;padding:24px;box-sizing:border-box}
+.message-modal-close{position:absolute;top:12px;right:14px;border:0;background:transparent;font-size:28px;line-height:1;cursor:pointer}
+.message-modal-box .field{margin-top:16px}
+.message-modal-box .control{width:100%;box-sizing:border-box}
+.message-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.message-result{display:none;margin-top:12px;font-size:13.5px}
+.message-result.error{color:var(--mark)}

@@ -22,9 +22,12 @@
     <div class="cmt">
       <div class="cmt-top">
 
-        <a href="{% url 'message_box' %}?receiver={{ c.writer.username }}">
-        <b>{{ c.writer.member_name }}</b>
-</a>
+        {% if user.is_authenticated and c.writer_id != user.member_id %}
+          <a class="message-open" href="{% url 'message_box' %}?receiver={{ c.writer.username|urlencode }}"
+             data-receiver="{{ c.writer.username }}" data-name="{{ c.writer.member_name }}"><b>{{ c.writer.member_name }}</b></a>
+        {% else %}
+          <b>{{ c.writer.member_name }}</b>
+        {% endif %}
 
         <span class="tag">{{ c.writer.user_type.type_name }}</span>
         <time>{{ c.created_at|date:"n월 j일 H:i" }}</time>

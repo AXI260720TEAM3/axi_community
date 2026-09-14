@@ -22,7 +22,8 @@
     <div class="post-meta">
       <span>
         {% if user.is_authenticated and not is_owner %}
-          <a href="{% url 'message_box' %}?receiver={{ post.writer.username|urlencode }}">{{ post.writer.member_name }}</a>
+          <a class="message-open" href="{% url 'message_box' %}?receiver={{ post.writer.username|urlencode }}"
+             data-receiver="{{ post.writer.username }}" data-name="{{ post.writer.member_name }}">{{ post.writer.member_name }}</a>
         {% else %}{{ post.writer.member_name }}{% endif %}
         · {{ post.writer.user_type.type_name }}
       </span>
@@ -51,7 +52,8 @@
 
   <div class="post-foot">
     {% if user.is_authenticated and not is_owner %}
-      <a class="btn quiet sm" href="{% url 'message_box' %}?receiver={{ post.writer.username|urlencode }}">쪽지 보내기</a>
+        <a class="btn quiet sm message-open" href="{% url 'message_box' %}?receiver={{ post.writer.username|urlencode }}"
+         data-receiver="{{ post.writer.username }}" data-name="{{ post.writer.member_name }}">쪽지 보내기</a>
     {% endif %}
     {% if is_owner %}
       <div class="right">

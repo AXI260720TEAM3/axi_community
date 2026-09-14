@@ -1,0 +1,43 @@
+{% comment %} ----------------------------------------------------------------
+   공통 쪽지 팝업. base.html 에서 로그인한 사용자에게만 include 합니다.
+   화면 어디든 아래 모양의 링크가 있으면 이 팝업이 열립니다.
+
+       <a class="message-open" href="쪽지함주소"
+          data-receiver="아이디" data-name="이름">이름</a>
+
+   동작은 static/community/js/message-modal.js 에 있습니다.
+   ---------------------------------------------------------------- {% endcomment %}
+<div id="message-modal" class="message-modal" aria-hidden="true">
+  <div class="message-modal-box" role="dialog" aria-modal="true"
+       aria-labelledby="message-modal-title">
+
+    <button type="button" class="message-modal-close" id="message-modal-close"
+            aria-label="쪽지 창 닫기">&times;</button>
+
+    <h2 id="message-modal-title">쪽지 보내기</h2>
+
+    <form id="message-modal-form" method="post" action="{% url 'message_send' %}">
+      {% csrf_token %}
+
+      <div class="field">
+        <label for="message-receiver-name">받는 사람</label>
+        <input id="message-receiver-name" class="control readonly" type="text" readonly>
+        <input id="message-receiver" type="hidden" name="receiver">
+      </div>
+
+      <div class="field">
+        <label for="message-content">내용</label>
+        <textarea id="message-content" class="control" name="content" rows="7"
+                  placeholder="쪽지 내용을 입력하세요"></textarea>
+      </div>
+
+      <p id="message-result" class="message-result"></p>
+
+      <div class="message-modal-actions">
+        <button type="button" class="btn quiet" id="message-modal-cancel">취소</button>
+        <button class="btn" type="submit">보내기</button>
+      </div>
+    </form>
+
+  </div>
+</div>

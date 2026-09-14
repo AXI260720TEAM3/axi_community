@@ -140,13 +140,26 @@
             수정
           </button>
 
+          {% comment %} 발송 취소: 상대가 읽기 전이라 양쪽에서 완전히 사라집니다 {% endcomment %}
+          <button
+            type="submit"
+            class="btn quiet"
+            name="action"
+            value="cancel"
+            formnovalidate
+            onclick="return confirm('발송을 취소하면 상대방에게 전달되지 않고 완전히 사라집니다. 계속할까요?');"
+          >
+            발송 취소
+          </button>
+
+          {% comment %} 삭제: 내 쪽지함에서만 사라집니다 {% endcomment %}
           <button
             type="submit"
             class="btn quiet"
             name="action"
             value="delete"
             formnovalidate
-            onclick="return confirm('이 쪽지를 삭제하시겠습니까? 삭제하면 상대방의 받은 쪽지함에서도 사라집니다.');"
+            onclick="return confirm('내 쪽지함에서만 지웁니다. 상대방 쪽지함에는 그대로 남습니다. 계속할까요?');"
           >
             삭제
           </button>
@@ -189,7 +202,18 @@
       </div>
 
 
-      <div class="message-detail-actions">
+      <form method="post" class="message-detail-actions">
+        {% csrf_token %}
+
+        <button
+          type="submit"
+          class="btn quiet"
+          name="action"
+          value="delete"
+          onclick="return confirm('내 쪽지함에서만 지웁니다. 상대방 쪽지함에는 그대로 남습니다. 계속할까요?');"
+        >
+          삭제
+        </button>
 
         <a
           href="{% url 'message_box' %}?tab=sent"
@@ -198,7 +222,7 @@
           쪽지함으로
         </a>
 
-      </div>
+      </form>
 
 
     {% else %}
@@ -222,14 +246,28 @@
       </div>
 
 
-      <div class="message-detail-actions">
+      <form method="post" class="message-detail-actions">
+        {% csrf_token %}
 
+        {% comment %} 답장도 공통 쪽지 팝업으로. JS 가 막히면 href 대로 쪽지함으로 갑니다 {% endcomment %}
         <a
-          href="{% url 'message_box' %}?receiver={{ message.sender.username }}"
-          class="btn quiet"
+          class="btn quiet message-open"
+          href="{% url 'message_box' %}?receiver={{ message.sender.username|urlencode }}"
+          data-receiver="{{ message.sender.username }}"
+          data-name="{{ message.sender.member_name }}"
         >
           답장하기
         </a>
+
+        <button
+          type="submit"
+          class="btn quiet"
+          name="action"
+          value="delete"
+          onclick="return confirm('내 쪽지함에서만 지웁니다. 보낸 사람 쪽지함에는 그대로 남습니다. 계속할까요?');"
+        >
+          삭제
+        </button>
 
         <a
           href="{% url 'message_box' %}?tab=received"
@@ -238,7 +276,7 @@
           쪽지함으로
         </a>
 
-      </div>
+      </form>
 
     {% endif %}
 

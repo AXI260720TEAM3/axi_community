@@ -20,7 +20,7 @@ def sidebar(request):
     unread = 0
     if request.user.is_authenticated:
         unread = Message.objects.filter(
-            receiver=request.user, read_at__isnull=True
+            receiver=request.user, read_at__isnull=True, receiver_deleted=False
         ).count()
 
     return {

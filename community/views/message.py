@@ -15,6 +15,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.http import JsonResponse
+from django.urls import reverse
 
 from ..models import Message
 
@@ -34,19 +36,20 @@ def message_box(request):
     unread_count = Message.objects.filter(
         receiver=request.user,
         read_at__isnull=True,
+        receiver_deleted=False,
     ).count()
 
     if current_tab == "sent":
         messages_queryset = (
             Message.objects
-            .filter(sender=request.user)
+            .filter(sender=request.user, sender_deleted=False)
             .select_related("receiver", "receiver__user_type")
             .order_by("-sent_at")
         )
     else:
         messages_queryset = (
             Message.objects
-            .filter(receiver=request.user)
+            .filter(receiver=request.user, receiver_deleted=False)
             .select_related("sender", "sender__user_type")
             .order_by("-sent_at")
         )
@@ -64,17 +67,30 @@ def message_box(request):
     selected_receiver = None
 
     if receiver_login_id:
-        selected_receiver = get_object_or_404(
-            User,
+        selected_receiver = User.objects.filter(
             username=receiver_login_id,
-        )
+        ).first()
 
-        if selected_receiver == request.user:
+        if selected_receiver is None:
+            messages.error(
+                request,
+                "그런 아이디의 회원이 없습니다.",
+            )
+
+        elif selected_receiver == request.user:
             messages.error(
                 request,
                 "자기 자신에게는 쪽지를 보낼 수 없습니다.",
             )
             selected_receiver = None
+
+    # 받는 사람을 직접 고를 때 쓰는 제안 목록 (입력칸의 datalist)
+    member_choices = (
+        User.objects
+        .exclude(pk=request.user.pk)
+        .select_related("user_type")
+        .order_by("member_name")
+    )
 
     return render(
         request,
@@ -85,6 +101,8 @@ def message_box(request):
             "unread_count": unread_count,
             "current_tab": current_tab,
             "selected_receiver": selected_receiver,
+            "member_choices": member_choices,
+            "receiver_login_id": receiver_login_id,
         },
     )
 
@@ -107,6 +125,10 @@ def message_detail(request, message_id):
     if not is_sender and not is_receiver:
         return redirect("message_box")
 
+    # 내가 지운 쪽지는 주소를 직접 입력해도 열리지 않습니다
+    if (is_sender and message.sender_deleted) or (is_receiver and message.receiver_deleted):
+        return redirect("message_box")
+
     if is_receiver and message.read_at is None:
         message.read_at = timezone.now()
         message.save(update_fields=["read_at"])
@@ -114,10 +136,25 @@ def message_detail(request, message_id):
     can_edit_delete = is_sender and message.read_at is None
 
     if request.method == "POST":
+        action = request.POST.get("action", "").strip()
+
+        # 삭제: 내 쪽지함에서만 지웁니다. 보낸 사람·받는 사람 모두 언제든 가능합니다.
+        if action == "delete":
+            message.delete_for(request.user)
+
+            messages.success(
+                request,
+                "쪽지를 삭제했습니다.",
+            )
+
+            tab = "sent" if is_sender else "received"
+            return redirect(f"{reverse('message_box')}?tab={tab}")
+
+        # 아래부터는 보낸 사람이, 상대가 읽기 전에만 할 수 있습니다.
         if not is_sender:
             messages.error(
                 request,
-                "받은 쪽지는 수정하거나 삭제할 수 없습니다.",
+                "받은 쪽지는 수정하거나 취소할 수 없습니다.",
             )
             return redirect(
                 "message_detail",
@@ -127,14 +164,22 @@ def message_detail(request, message_id):
         if message.read_at is not None:
             messages.error(
                 request,
-                "상대방이 이미 읽은 쪽지는 수정하거나 삭제할 수 없습니다.",
+                "상대방이 이미 읽은 쪽지는 수정하거나 취소할 수 없습니다.",
             )
             return redirect(
                 "message_detail",
                 message_id=message.message_id,
             )
 
-        action = request.POST.get("action", "").strip()
+        if action == "cancel":
+            message.delete()
+
+            messages.success(
+                request,
+                "쪽지를 발송 취소했습니다.",
+            )
+
+            return redirect(f"{reverse('message_box')}?tab=sent")
 
         if action == "edit":
             content = request.POST.get(
@@ -165,16 +210,6 @@ def message_detail(request, message_id):
                 message_id=message.message_id,
             )
 
-        if action == "delete":
-            message.delete()
-
-            messages.success(
-                request,
-                "쪽지를 삭제했습니다.",
-            )
-
-            return redirect("message_box")
-
     return render(
         request,
         "message/detail.html",
@@ -187,6 +222,16 @@ def message_detail(request, message_id):
         },
     )
 
+def _is_popup(request):
+    """팝업(fetch)에서 온 요청인지. 팝업 JS가 이 헤더를 붙여 보냅니다"""
+    return request.headers.get("x-requested-with") == "XMLHttpRequest"
+
+def _send_failed(request,text):
+    """보내기 실패 응답. 팝업이면 JSON, 일반 폼이면 지금처럼 쪽지함으로."""
+    if _is_popup(request):
+        return JsonResponse({"ok":False, "error": text}, status=400)
+    messages.error(request, text)
+    return redirect("message_box")
 
 @login_required
 def message_send(request):
@@ -204,30 +249,18 @@ def message_send(request):
     ).strip()
 
     if not receiver_login_id:
-        messages.error(
-            request,
-            "받는 사람을 선택해주세요.",
-        )
-        return redirect("message_box")
+        return _send_failed(request, "받는 사람을 선택해주세요.")
 
     if not content:
-        messages.error(
-            request,
-            "쪽지 내용을 입력해주세요.",
-        )
-        return redirect("message_box")
+        return _send_failed(request, "쪽지 내용을 입력해주세요.")
 
-    receiver = get_object_or_404(
-        User,
-        username=receiver_login_id,
-    )
+    receiver = User.objects.filter(username=receiver_login_id).first()
+
+    if receiver is None:
+        return _send_failed(request, "그런 아이디의 회원이 없습니다.")
 
     if receiver == request.user:
-        messages.error(
-            request,
-            "자기 자신에게는 쪽지를 보낼 수 없습니다.",
-        )
-        return redirect("message_box")
+        return _send_failed(request, "자기 자신에게는 쪽지를 보낼 수 없습니다.")
 
     Message.objects.create(
         sender=request.user,
@@ -235,9 +268,13 @@ def message_send(request):
         content=content,
     )
 
+    if _is_popup(request):
+        return JsonResponse({"ok": True})
+    
     messages.success(
         request,
         "쪽지를 보냈습니다.",
     )
 
-    return redirect("message_box")
+    # 방금 보낸 쪽지가 바로 보이도록 보낸 쪽지 탭으로 갑니다
+    return redirect(f"{reverse('message_box')}?tab=sent")

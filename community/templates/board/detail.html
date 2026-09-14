@@ -25,9 +25,6 @@
       <span>{{ post.created_at|date:"Y년 n월 j일 H:i" }}</span>
       {% if post.updated_at %}<span>수정됨</span>{% endif %}
       {% if attachments %}<span>첨부 {{ attachments|length }}</span>{% endif %}
-      
-      <!-- 상단 메타에 추천수 추가 (PostLike 모델의 related_name인 likes 활용) -->
-      <span style="color: #007bff; font-weight: bold;"> 추천 {{ post.likes.count }}</span>
     </div>
   </div>
 
@@ -48,17 +45,13 @@
   {% endif %}
 
   <div class="post-foot">
-    <!-- 하단 좌측: 추천 버튼 배치 (쪽지 버튼 대체) -->
-    <div class="left">
-      {% if user.is_authenticated %}
-        <form method="post" action="{% url 'post_like' post.post_id %}" style="display:inline">
-          {% csrf_token %}
-          <button type="submit" class="btn quiet sm" style="display: inline-flex; align-items: center; gap: 4px;">
-             추천 <b>{{ post.likes.count }}</b>
-          </button>
-        </form>
-      {% endif %}
-    </div>
+    {% comment %} 추천: 본인 글에는 보이지 않습니다(서버에서도 막습니다) {% endcomment %}
+    {% if user.is_authenticated and not is_owner %}
+      <form method="post" action="{% url 'post_like' post.post_id %}" style="display:inline">
+        {% csrf_token %}
+        <button type="submit" class="btn quiet sm">추천 <b>{{ post.likes.count }}</b></button>
+      </form>
+    {% endif %}
 
     {% if is_owner %}
       <div class="right">

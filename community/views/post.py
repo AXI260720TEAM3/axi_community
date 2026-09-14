@@ -8,7 +8,7 @@ post_detail 은 목록에서 제목을 눌렀을 때 화면이 뜨도록 읽기 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render, redirect
 
-from ..models import Attachment, Post, Board
+from ..models import Attachment, Post, Board, PostLike
 from ..permissions import is_owner, can_write, write_denied_reason
 from django.utils import timezone
 
@@ -16,6 +16,8 @@ from django.contrib import messages
 
 import logging
 from django.http import FileResponse
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -208,3 +210,30 @@ def attachment_download(request, attachment_id):
 
     # # TODO [A] FileResponse 로 내려주기. 다운로드 파일명은 origin_name 을 사용합니다.
     # raise NotImplementedError("attachment_download — [A] 팀장 담당")
+
+@login_required
+def post_like(request, post_id):
+    """게시글 추천 / 추천 취소 토글 함수"""
+    if request.method == "POST":
+        post = get_object_or_404(Post, pk=post_id)
+
+        # 1. 본인 작성 글 추천 불가 처리 (선택 사항)
+        if post.writer == request.user:
+            messages.error(request, "본인이 작성한 글은 추천할 수 없습니다.")
+            return redirect('post_detail', post_id=post.post_id)
+
+        # 2. 이미 추천했는지 확인
+        like_qs = PostLike.objects.filter(member=request.user, post=post)
+
+        if like_qs.exists():
+            # 이미 눌렀으면 삭제 (추천 취소)
+            like_qs.delete()
+            messages.success(request, "추천을 취소했습니다.")
+        else:
+            # 안 눌렀으면 생성 (추천 등록)
+            PostLike.objects.create(member=request.user, post=post)
+            messages.success(request, "게시글을 추천했습니다.")
+
+        return redirect('post_detail', post_id=post.post_id)
+
+    return redirect('post_detail', post_id=post_id)

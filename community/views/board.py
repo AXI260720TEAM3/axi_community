@@ -58,9 +58,22 @@ def board_list(request, board_id):
         else:
             posts = posts.filter(Q(title__icontains=keyword) | Q(content__icontains=keyword))
 
+    # 화면에 보여줄 이름 : 실제 정렬 기준
+    SORT_OPTIONS = {
+        "new": ("최신순", "-created_at"),
+        "view": ("조회순", "-view_count"),
+        "like": ("추천순", "-like_count"),
+        "title": ("제목순", "title"),
+    }
+
+    sort = request.GET.get("sort", "new")
+    if sort not in SORT_OPTIONS:
+        sort = "new"
+    
     # annotate() 가 GROUP BY 를 붙이면 Meta.ordering 이 무효가 됩니다.
     # 정렬을 명시하지 않으면 페이지마다 순서가 달라질 수 있습니다.
-    posts = posts.order_by("-created_at")
+    # 같은 값이 여러 개일 때 순서가 흔들리지 않게 항상 post_id 를 보조 기준으로 둡니다
+    posts = posts.order_by(SORT_OPTIONS[sort][1], "-post_id")
 
     page = Paginator(posts, PAGE_SIZE).get_page(request.GET.get("page"))
 
@@ -75,5 +88,7 @@ def board_list(request, board_id):
             "can_write": can_write(request.user, board),
             "denied_reason": write_denied_reason(board),
             "nav_current": board.board_id,
+            "sort": sort,
+            "sort_options": SORT_OPTIONS,
         },
     )

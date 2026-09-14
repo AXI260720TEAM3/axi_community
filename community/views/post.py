@@ -17,6 +17,8 @@ from django.contrib import messages
 import logging
 from django.http import FileResponse
 
+from django.db.models import F
+
 
 
 logger = logging.getLogger(__name__)
@@ -26,6 +28,14 @@ def post_detail(request, post_id):
     post = get_object_or_404(
         Post.objects.select_related("board", "writer"), pk=post_id, is_deleted=False
     )
+
+    # 조회수: 한 번 본 글은 이 브라우저 세션이 끝날 때까지 다시 세지 않습니다.
+    seen = request.session.setdefault("seen_posts", [])
+    if post.post_id not in seen:
+        Post.objects.filter(pk=post.post_id).update(view_count=F("view_count") + 1)
+        post.view_count += 1
+        seen.append(post.post_id)
+        request.session.modified = True
     return render(
         request,
         "board/detail.html",

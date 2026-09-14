@@ -77,6 +77,10 @@
 </main>
 
 </div>
+{% if user.is_authenticated %}
+  {% include "message/_modal.html" %}
+  <script src="{% static 'community/js/message-modal.js' %}"></script>
+{% endif %}
 
 {% block extra_js %}{% endblock %}
 

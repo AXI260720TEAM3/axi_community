@@ -96,7 +96,7 @@ def find_account(request):
                 user.save()
                 
                 # 이메일 전송 내용 작성
-                subject = '[모두의국비] 임시 비밀번호가 발급되었습니다.'
+                subject = '[기회를 IT-DA] 임시 비밀번호가 발급되었습니다.'
                 message = (
                     f"안녕하세요 {user.member_name}님,\n\n"
                     f"요청하신 임시 비밀번호는 다음과 같습니다.\n\n"

@@ -5,183 +5,104 @@
 
 <style>
   .qna-alert {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 10000;
-    font-size: 16px;
-    font-weight: 600;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 14px 20px;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+    display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
+    z-index:10000; font-size:16px; font-weight:600; background:white;
+    border:1px solid #ddd; border-radius:8px; padding:14px 20px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.15);
   }
 
-  .qna-alert.success {
-    color: black;
-  }
-
-  .qna-alert.error {
-    color: red;
-  }
-
-  .qna-detail-panel {
-    overflow: hidden;
-  }
-
-  .qna-detail-panel .post-head {
-    padding: 24px;
-  }
-
-  .qna-detail-panel .post-body {
-    padding: 24px;
-    min-height: 110px;
-  }
+  .qna-alert.success { color:black; }
+  .qna-alert.error { color:red; }
+  .qna-detail-panel { overflow:hidden; }
+  .qna-detail-panel .post-head { padding:24px; }
+  .qna-detail-panel .post-body { padding:24px; min-height:110px; }
 
   .qna-attachments {
-    padding: 16px 24px;
-    border-top: 1px solid #ddd;
+    padding:16px 24px;
+    border-top:1px solid #ddd;
   }
 
-  .qna-attachments-title {
-    margin-bottom: 8px;
-    font-weight: 600;
-  }
+  .qna-attachments-title { margin-bottom:8px; font-weight:600; }
 
   .qna-attachment-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    padding: 7px 0;
+    display:flex; justify-content:space-between; align-items:center;
+    gap:16px; padding:7px 0;
   }
 
-  .qna-attachment-row a {
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
+  .qna-attachment-row a { min-width:0; overflow-wrap:anywhere; }
+  .qna-attachment-size { flex:0 0 auto; color:#666; font-size:14px; }
 
-  .qna-attachment-size {
-    flex: 0 0 auto;
-    color: #666;
-    font-size: 14px;
-  }
-
-  /* 추천 버튼 및 작업 버튼 영역 스타일 */
   .qna-actions-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 24px;
-    border-top: 1px solid #ddd;
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px 24px; border-top:1px solid #ddd;
   }
 
   .qna-owner-actions {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 10px;
+    display:flex; justify-content:flex-end;
+    align-items:center; gap:10px;
   }
 
   .qna-owner-actions form,
-  .qna-like-action form {
-    margin: 0;
-  }
+  .qna-like-action form { margin:0; }
 
   .qna-edit-form {
-    display: none;
-    padding: 20px 24px 24px;
-    border-top: 1px solid #ddd;
+    display:none; padding:20px 24px 24px;
+    border-top:1px solid #ddd;
   }
 
-  .qna-edit-form.open {
-    display: block;
-  }
-
-  .qna-edit-form .field {
-    margin-top: 16px;
-  }
-
-  .qna-edit-form .field:first-child {
-    margin-top: 0;
-  }
-
-  .qna-edit-form .control {
-    width: 100%;
-    box-sizing: border-box;
-  }
+  .qna-edit-form.open { display:block; }
+  .qna-edit-form .field { margin-top:16px; }
+  .qna-edit-form .field:first-child { margin-top:0; }
+  .qna-edit-form .control { width:100%; box-sizing:border-box; }
 
   .qna-edit-form input.control,
-  .qna-edit-form textarea.control {
-    padding: 12px 14px;
-  }
+  .qna-edit-form textarea.control { padding:12px 14px; }
 
   .qna-edit-form .formfoot {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 20px;
+    display:flex; justify-content:flex-end;
+    gap:10px; margin-top:20px;
   }
 
-  .qna-answer-panel {
-    margin-top: 18px;
-  }
+  .qna-answer-panel { margin-top:18px; }
 
-  /* 답변 하단 푸터 스타일 */
   .cmt-foot {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px dashed #eee;
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:12px; padding-top:12px; border-top:1px dashed #eee;
   }
 
+  .answer-actions { display:flex; align-items:center; gap:8px; }
+  .answer-actions form { margin:0; }
+
+  .file-remove {
+    border:0; background:none; padding:0; color:#777;
+    font-size:18px; line-height:1; cursor:pointer;
+  }
+
+  .file-remove:hover { color:#222; }
 </style>
 
-
 {% for msg in messages %}
-  <div class="qna-alert {% if 'success' in msg.tags %}success{% else %}error{% endif %}">
-    {{ msg }}
-  </div>
+  <div class="qna-alert {% if 'success' in msg.tags %}success{% else %}error{% endif %}">{{ msg }}</div>
 {% endfor %}
 
-
 <div class="head">
-  <div class="crumb">
-    <a href="{% url 'qna_list' %}">Q&amp;A</a> · 질문
-  </div>
-
-  <a class="btn quiet" href="{% url 'qna_list' %}">
-    목록으로
-  </a>
+  <div class="crumb"><a href="{% url 'qna_list' %}">Q&amp;A</a> · 질문</div>
+  <a class="btn quiet" href="{% url 'qna_list' %}">목록으로</a>
 </div>
-
 
 <article class="panel qna-detail-panel">
 
   <div class="post-head">
-
     <h1>{{ question.title }}</h1>
 
     <div class="post-meta">
       <span>
         {% if user.is_authenticated %}
-          <a
-            class="message-open"
-            href="#"
-            data-receiver="{{ question.writer.username }}"
-            data-name="{{ question.writer.member_name }}"
-          >
-            {{ question.writer.member_name }}
-          </a>
+          <a class="message-open" href="#" data-receiver="{{ question.writer.username }}"
+             data-name="{{ question.writer.member_name }}">{{ question.writer.member_name }}</a>
         {% else %}
           <span>{{ question.writer.member_name }}</span>
         {% endif %}
-
         · {{ question.writer.user_type.type_name }}
       </span>
 
@@ -195,235 +116,136 @@
         <span>수정됨</span>
       {% endif %}
 
-      <!-- 질문 추천수 표시 -->
-      <span style="color: #007bff; font-weight: bold;"> 추천 {{ question.likes.count }}</span>
+      <span style="color:#007bff; font-weight:bold;">추천 {{ question.likes.count }}</span>
     </div>
-
   </div>
 
-
-  <div class="post-body">
-    {{ question.content|linebreaks }}
-  </div>
-
+  <div class="post-body">{{ question.content|linebreaks }}</div>
 
   {% if attachments %}
     <div class="qna-attachments">
-
-      <div class="qna-attachments-title">
-        첨부파일
-      </div>
+      <div class="qna-attachments-title">첨부파일</div>
 
       {% for f in attachments %}
         <div class="qna-attachment-row">
-          <a href="{% url 'attachment_download' f.attachment_id %}">
-            {{ f.origin_name }}
-          </a>
-
-          <span class="qna-attachment-size">
-            {{ f.file_size|filesizeformat }}
-          </span>
+          <a href="{% url 'attachment_download' f.attachment_id %}">{{ f.origin_name }}</a>
+          <span class="qna-attachment-size">{{ f.file_size|filesizeformat }}</span>
         </div>
       {% endfor %}
-
     </div>
   {% endif %}
 
-
-  <!-- 질문 하단 버튼 영역 (추천 버튼 + 작성자 수정/삭제 버튼) -->
   <div class="qna-actions-bar">
     <div class="qna-like-action">
       {% if user.is_authenticated %}
         <form method="post" action="{% url 'post_like' question.post_id %}">
           {% csrf_token %}
-          <button type="submit" class="btn quiet sm" style="display: inline-flex; align-items: center; gap: 4px;">
-             추천 <b>{{ question.likes.count }}</b>
-          </button>
+          <button type="submit" class="btn quiet sm"
+                  style="display:inline-flex; align-items:center; gap:4px;">추천 <b>{{ question.likes.count }}</b></button>
         </form>
       {% endif %}
     </div>
 
     {% if is_owner %}
       <div class="qna-owner-actions">
-        <button
-          type="button"
-          class="btn quiet"
-          id="qna-edit-open"
-        >
-          수정
-        </button>
+        <button type="button" class="btn quiet" id="qna-edit-open">수정</button>
 
-        <form
-          method="post"
-          onsubmit="return confirm('이 질문을 삭제하시겠습니까?');"
-        >
+        <form method="post" onsubmit="return confirm('이 질문을 삭제하시겠습니까?');">
           {% csrf_token %}
-
-          <button
-            type="submit"
-            class="btn quiet"
-            name="action"
-            value="delete"
-          >
-            삭제
-          </button>
+          <button type="submit" class="btn quiet" name="action" value="delete">삭제</button>
         </form>
       </div>
     {% endif %}
   </div>
 
-
   {% if is_owner %}
-    <form
-      method="post"
-      class="qna-edit-form"
-      id="qna-edit-form"
-    >
+    <form method="post" class="qna-edit-form" id="qna-edit-form">
       {% csrf_token %}
 
       <div class="field">
         <label for="qna-edit-title">제목</label>
-
-        <input
-          id="qna-edit-title"
-          class="control"
-          type="text"
-          name="title"
-          maxlength="250"
-          value="{{ question.title }}"
-        >
+        <input id="qna-edit-title" class="control" type="text" name="title"
+               maxlength="250" value="{{ question.title }}">
       </div>
 
       <div class="field">
         <label for="qna-edit-content">내용</label>
-
-        <textarea
-          id="qna-edit-content"
-          class="control"
-          name="content"
-          rows="10"
-        >{{ question.content }}</textarea>
+        <textarea id="qna-edit-content" class="control" name="content"
+                  rows="10">{{ question.content }}</textarea>
       </div>
 
       <div class="formfoot">
-        <button
-          type="button"
-          class="btn quiet"
-          id="qna-edit-cancel"
-        >
-          취소
-        </button>
-
-        <button
-          type="submit"
-          class="btn"
-          name="action"
-          value="edit"
-        >
-          수정 완료
-        </button>
+        <button type="button" class="btn quiet" id="qna-edit-cancel">취소</button>
+        <button type="submit" class="btn" name="action" value="edit">수정 완료</button>
       </div>
-
     </form>
   {% endif %}
 
 </article>
 
-
 <div class="panel qna-answer-panel">
-
-  <div class="cmt-head">
-    답변 {{ answers|length }}
-  </div>
-
+  <div class="cmt-head">답변 {{ answers|length }}</div>
 
   {% for a in answers %}
     <div class="cmt">
 
       <div class="cmt-top">
-
         {% if user.is_authenticated %}
-          <a
-            class="message-open"
-            href="#"
-            data-receiver="{{ a.writer.username }}"
-            data-name="{{ a.writer.member_name }}"
-          >
-            <b>{{ a.writer.member_name }}</b>
-          </a>
+          <a class="message-open" href="#" data-receiver="{{ a.writer.username }}"
+             data-name="{{ a.writer.member_name }}"><b>{{ a.writer.member_name }}</b></a>
         {% else %}
-          <span>
-            <b>{{ a.writer.member_name }}</b>
-          </span>
+          <span><b>{{ a.writer.member_name }}</b></span>
         {% endif %}
 
-        <span class="tag">
-          {{ a.writer.user_type.type_name }}
-        </span>
-
-        <time>
-          {{ a.created_at|date:"n월 j일 H:i" }}
-        </time>
-
+        <span class="tag">{{ a.writer.user_type.type_name }}</span>
+        <time>{{ a.created_at|date:"n월 j일 H:i" }}</time>
       </div>
 
       <h3>{{ a.title }}</h3>
-
       <p>{{ a.content|linebreaksbr }}</p>
 
       {% if a.attachments.all %}
-        <div class="qna-attachments" style="margin-top: 12px;">
-
-          <div class="qna-attachments-title">
-            첨부파일
-          </div>
+        <div class="qna-attachments" style="margin-top:12px;">
+          <div class="qna-attachments-title">첨부파일</div>
 
           {% for f in a.attachments.all %}
             <div class="qna-attachment-row">
-              <a href="{% url 'attachment_download' f.attachment_id %}">
-                {{ f.origin_name }}
-              </a>
-
-              <span class="qna-attachment-size">
-                {{ f.file_size|filesizeformat }}
-              </span>
+              <a href="{% url 'attachment_download' f.attachment_id %}">{{ f.origin_name }}</a>
+              <span class="qna-attachment-size">{{ f.file_size|filesizeformat }}</span>
             </div>
           {% endfor %}
-
         </div>
       {% endif %}
 
-      <!-- 답변 하단 영역 (채택 버튼 및 답변 추천 버튼) -->
       <div class="cmt-foot">
         <div class="qna-like-action">
           {% if user.is_authenticated %}
             <form method="post" action="{% url 'post_like' a.post_id %}">
               {% csrf_token %}
-              <button type="submit" class="btn quiet sm" style="display: inline-flex; align-items: center; gap: 4px;">
-                 추천 <b>{{ a.likes.count }}</b>
-              </button>
+              <button type="submit" class="btn quiet sm"
+                      style="display:inline-flex; align-items:center; gap:4px;">추천 <b>{{ a.likes.count }}</b></button>
             </form>
           {% endif %}
         </div>
 
-        <div>
+        <div class="answer-actions">
+          {% if user.is_authenticated and a.writer_id == user.member_id %}
+            <a class="btn quiet" href="{% url 'qna_edit_answer' question.post_id a.post_id %}">수정</a>
+
+            <form method="post" action="{% url 'qna_delete_answer' question.post_id a.post_id %}"
+                  onsubmit="return confirm('이 답변을 삭제하시겠습니까?');">
+              {% csrf_token %}
+              <button type="submit" class="btn quiet">삭제</button>
+            </form>
+          {% endif %}
+
           {% if question.accepted_answer_id == a.post_id %}
             <span class="tag">채택 완료</span>
-
           {% elif is_owner and not question.accepted_answer_id %}
-            <form
-              method="post"
-              action="{% url 'qna_accept_answer' question.post_id a.post_id %}"
-              onsubmit="return confirm('이 답변을 채택하시겠습니까?');"
-            >
+            <form method="post" action="{% url 'qna_accept_answer' question.post_id a.post_id %}"
+                  onsubmit="return confirm('이 답변을 채택하시겠습니까?');">
               {% csrf_token %}
-
-              <button
-                type="submit"
-                class="btn quiet"
-              >
-                채택하기
-              </button>
+              <button type="submit" class="btn quiet">채택하기</button>
             </form>
           {% endif %}
         </div>
@@ -432,54 +254,39 @@
     </div>
 
   {% empty %}
-    <div class="cmt gone">
-      <p>아직 등록된 답변이 없습니다.</p>
-    </div>
+    <div class="cmt gone"><p>아직 등록된 답변이 없습니다.</p></div>
   {% endfor %}
-
 </div>
-
 
 {% if can_answer %}
   <div class="panel">
     <div class="pad">
-
       <h2>답변 작성</h2>
 
-      <form
-        method="post"
-        action="{% url 'qna_answer' question.post_id %}"
-      >
+      <form method="post" action="{% url 'qna_answer' question.post_id %}" enctype="multipart/form-data">
         {% csrf_token %}
 
         <div class="field">
           <label for="answer-title">제목</label>
-
-          <input
-            class="control"
-            id="answer-title"
-            name="title"
-            maxlength="250"
-            placeholder="답변 제목을 입력하세요"
-          >
+          <input class="control" id="answer-title" name="title"
+                 maxlength="250" placeholder="답변 제목을 입력하세요">
         </div>
 
         <div class="field">
           <label for="answer-content">내용</label>
+          <textarea class="control" id="answer-content" name="content"
+                    rows="8" placeholder="답변 내용을 입력하세요"></textarea>
+        </div>
 
-          <textarea
-            class="control"
-            id="answer-content"
-            name="content"
-            rows="8"
-            placeholder="답변 내용을 입력하세요"
-          ></textarea>
+        <div class="field">
+          <label>첨부파일 <span class="hint">새 파일을 추가할 수 있습니다</span></label>
+          <input type="file" id="answer-files" name="files" multiple hidden>
+          <div class="dropzone" id="answer-dropzone">파일을 끌어다 놓거나 클릭해서 고르세요</div>
+          <div class="attached" id="answer-file-list"></div>
         </div>
 
         <div class="formfoot">
-          <button class="btn" type="submit">
-            답변 등록
-          </button>
+          <button class="btn" type="submit">답변 등록</button>
         </div>
       </form>
 
@@ -487,17 +294,12 @@
   </div>
 {% endif %}
 
-
-
 <script>
   const qnaAlerts = document.querySelectorAll(".qna-alert");
 
   qnaAlerts.forEach(function(alertMessage) {
     alertMessage.style.display = "block";
-
-    setTimeout(function() {
-      alertMessage.style.display = "none";
-    }, 2000);
+    setTimeout(function() { alertMessage.style.display = "none"; }, 2000);
   });
 
   const editOpenButton = document.getElementById("qna-edit-open");
@@ -521,26 +323,111 @@
 
   if (editForm) {
     editForm.addEventListener("submit", function(event) {
-      if (
-        !editTitle.value.trim()
-        || !editContent.value.trim()
-      ) {
+      if (!editTitle.value.trim() || !editContent.value.trim()) {
         event.preventDefault();
-
         const warning = document.createElement("div");
         warning.className = "qna-alert error";
         warning.textContent = "제목과 내용을 모두 입력해주세요.";
-
         document.body.appendChild(warning);
         warning.style.display = "block";
-
-        setTimeout(function() {
-          warning.remove();
-        }, 2000);
+        setTimeout(function() { warning.remove(); }, 2000);
       }
     });
   }
-</script>
 
+  const fileInput = document.getElementById("answer-files");
+  const fileDropzone = document.getElementById("answer-dropzone");
+  const fileList = document.getElementById("answer-file-list");
+  const selectedFiles = new DataTransfer();
+
+  function renderFiles() {
+    if (!fileList) return;
+
+    fileList.innerHTML = "";
+
+    Array.from(selectedFiles.files).forEach(function(file, index) {
+      const row = document.createElement("div");
+      const name = document.createElement("span");
+      const size = document.createElement("span");
+      const remove = document.createElement("button");
+
+      row.className = "file";
+      name.className = "name";
+      size.className = "size";
+      remove.className = "file-remove";
+      remove.type = "button";
+      remove.textContent = "×";
+      remove.title = "첨부파일 삭제";
+
+      name.textContent = file.name;
+      size.textContent = (file.size / 1024).toFixed(1) + " KB";
+
+      remove.addEventListener("click", function(event) {
+        event.stopPropagation();
+
+        const remainingFiles = Array.from(selectedFiles.files);
+        selectedFiles.items.clear();
+
+        remainingFiles.forEach(function(savedFile, savedIndex) {
+          if (savedIndex !== index) {
+            selectedFiles.items.add(savedFile);
+          }
+        });
+
+        fileInput.files = selectedFiles.files;
+        renderFiles();
+      });
+
+      row.appendChild(name);
+      row.appendChild(remove);
+      row.appendChild(size);
+      fileList.appendChild(row);
+    });
+  }
+
+  function addFiles(files) {
+    const newFiles = Array.from(files);
+
+    newFiles.forEach(function(file) {
+      const duplicate = Array.from(selectedFiles.files).some(function(savedFile) {
+        return savedFile.name === file.name &&
+               savedFile.size === file.size &&
+               savedFile.lastModified === file.lastModified;
+      });
+
+      if (!duplicate) {
+        selectedFiles.items.add(file);
+      }
+    });
+
+    fileInput.files = selectedFiles.files;
+    renderFiles();
+  }
+
+  if (fileInput && fileDropzone && fileList) {
+    fileDropzone.addEventListener("click", function() {
+      fileInput.value = "";
+      fileInput.click();
+    });
+
+    fileInput.addEventListener("change", function(event) {
+      addFiles(event.target.files);
+    });
+
+    fileDropzone.addEventListener("dragenter", function(event) {
+      event.preventDefault();
+    });
+
+    fileDropzone.addEventListener("dragover", function(event) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+    });
+
+    fileDropzone.addEventListener("drop", function(event) {
+      event.preventDefault();
+      addFiles(event.dataTransfer.files);
+    });
+  }
+</script>
 
 {% endblock %}

@@ -62,8 +62,9 @@ urlpatterns = [
     path("qna/ask/", qna.qna_ask, name="qna_ask"),
     path("qna/<int:post_id>/", qna.qna_detail, name="qna_detail"),
     path("qna/<int:post_id>/answer/", qna.qna_answer, name="qna_answer"),
-    path("qna/<int:post_id>/answers/<int:answer_id>/accept/",qna.qna_accept_answer, name="qna_accept_answer"),
-
+    path("qna/<int:post_id>/answers/<int:answer_id>/accept/", qna.qna_accept_answer, name="qna_accept_answer"),
+    path("qna/<int:post_id>/answers/<int:answer_id>/edit/", qna.qna_edit_answer, name="qna_edit_answer"),
+    path("qna/<int:post_id>/answers/<int:answer_id>/delete/", qna.qna_delete_answer, name="qna_delete_answer"),
 
     # ---------------------------------------------------------------- [C] 쪽지
     path("messages/", message.message_box, name="message_box"),
@@ -71,8 +72,8 @@ urlpatterns = [
     path("messages/<int:message_id>/", message.message_detail, name="message_detail"),
     
     # ---------------------------------------------------------------- [C] 알림
-path("notifications/", notification.notification_list, name="notification_list"),
-path("notifications/<int:notification_id>/read/", notification.notification_read, name="notification_read"),
-path("notifications/read-all/", notification.notification_read_all, name="notification_read_all"),
-path("notifications/<int:notification_id>/delete/", notification.notification_delete, name="notification_delete"),
+    path("notifications/", notification.notification_list, name="notification_list"),
+    path("notifications/<int:notification_id>/read/", notification.notification_read, name="notification_read"),
+    path("notifications/read-all/", notification.notification_read_all, name="notification_read_all"),
+    path("notifications/<int:notification_id>/delete/", notification.notification_delete, name="notification_delete"),
 ]

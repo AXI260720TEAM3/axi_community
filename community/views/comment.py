@@ -7,10 +7,10 @@ Q&A 게시판에는 댓글을 달 수 없습니다. board.allow_comment 를 반�
 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect
-
-from ..models import Post, PostComment, Notification
-from ..permissions import is_owner
 from django.urls import reverse
+
+from ..models import Notification, Post, PostComment
+from ..permissions import is_owner
 
 
 @login_required
@@ -38,7 +38,6 @@ def comment_create(request, post_id):
                 is_deleted=False,
             )
 
-            # 대댓글의 대댓글은 막고 1단계까지만 허용
             if parent.parent_id is not None:
                 return redirect(
                     "post_detail",
@@ -46,35 +45,35 @@ def comment_create(request, post_id):
                 )
 
         if content:
-            comment = PostComment.objects.create(
-        post=post,
-        writer=request.user,
-        parent=parent,
-        content=content,
-    )
+            PostComment.objects.create(
+                post=post,
+                writer=request.user,
+                parent=parent,
+                content=content,
+            )
 
-    # 일반 댓글이면 게시글 작성자에게 알림
-    if parent is None:
-        Notification.notify(
-    receiver=question.writer,
-    kind=Notification.Kind.ANSWER,
-    message=f"{request.user.member_name}님이 내 Q&A에 답변을 남겼습니다.",
-    link=reverse(
-        "qna_detail",
-        args=[question.post_id],
-    ),
-    actor=request.user,
-)
-
-    # 대댓글이면 원댓글 작성자에게 알림
-    else:
-        Notification.notify(
-            receiver=parent.writer,
-            kind=Notification.Kind.COMMENT,
-            message=f"{request.user.member_name}님이 내 댓글에 답글을 남겼습니다.",
-            link=reverse("post_detail", args=[post.post_id],),
-            actor=request.user,
-        )
+            if parent is None:
+                Notification.notify(
+                    receiver=post.writer,
+                    kind=Notification.Kind.COMMENT,
+                    message=f"{request.user.member_name}님이 내 게시글에 댓글을 남겼습니다.",
+                    link=reverse(
+                        "post_detail",
+                        args=[post.post_id],
+                    ),
+                    actor=request.user,
+                )
+            else:
+                Notification.notify(
+                    receiver=parent.writer,
+                    kind=Notification.Kind.COMMENT,
+                    message=f"{request.user.member_name}님이 내 댓글에 답글을 남겼습니다.",
+                    link=reverse(
+                        "post_detail",
+                        args=[post.post_id],
+                    ),
+                    actor=request.user,
+                )
 
     return redirect("post_detail", post_id=post_id)
 

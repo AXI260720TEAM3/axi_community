@@ -21,7 +21,7 @@
   <nav>
     <h4>게시판</h4>
     {% for b in nav_boards %}
-      {% if b.board_name == 'Q&A' %}
+      {% if b.is_qna %}
         <a class="navlink" href="{% url 'qna_list' %}"
            {% if nav_current == 'qna' %}aria-current="true"{% endif %}>Q&amp;A</a>
       {% else %}

@@ -13,9 +13,9 @@ URL 설계 — 팀장이 관리합니다.
 
 from django.urls import path
 
-from .views import account, board, comment, message, mypage, post, qna
-from .views import recruit
-from .views import account, board, comment, message, mypage, post, qna, notification
+from .views import (
+    account, board, comment, message, mypage, notification, post, qna, recruit,
+)
 
 urlpatterns = [
     # ---------------------------------------------------------------- [A] 게시판

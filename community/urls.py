@@ -63,4 +63,5 @@ urlpatterns = [
 path("notifications/", notification.notification_list, name="notification_list"),
 path("notifications/<int:notification_id>/read/", notification.notification_read, name="notification_read"),
 path("notifications/read-all/", notification.notification_read_all, name="notification_read_all"),
+path("notifications/<int:notification_id>/delete/", notification.notification_delete, name="notification_delete"),
 ]

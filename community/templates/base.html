@@ -45,16 +45,23 @@
   </nav>
 
   <div class="whoami">
-    {% if user.is_authenticated %}
-      <b>{{ user.member_name }}</b>
-      <small>{{ user.user_type.type_name }}</small>
-      <a href="{% url 'logout' %}">로그아웃</a>
-    {% else %}
-      <b>손님</b>
-      <small>로그인이 필요합니다</small>
-      <a href="{% url 'login' %}">로그인</a>
-    {% endif %}
-  </div>
+  {% if user.is_authenticated %}
+    <b>{{ user.member_name }}</b>
+    <small>{{ user.user_type.type_name }}</small>
+
+    <!-- POST 방식 로그아웃 폼 -->
+    <form method="post" action="{% url 'logout' %}" style="display: inline;">
+      {% csrf_token %}
+      <button type="submit" style="background: none; border: none; color: inherit; font: inherit; cursor: pointer; text-decoration: underline; padding: 0;">
+        로그아웃
+      </button>
+    </form>
+  {% else %}
+    <b>손님</b>
+    <small>로그인이 필요합니다</small>
+    <a href="{% url 'login' %}">로그인</a>
+  {% endif %}
+</div>
 </aside>
 
 <main class="stage">

@@ -52,6 +52,7 @@ urlpatterns = [
     path('recruit/<int:recruit_id>/apply/', recruit.recruit_apply, name='recruit_apply'),
     path('recruit/<int:recruit_id>/close/', recruit.recruit_close, name='recruit_close'),
     path('recruit/application/<int:app_id>/<str:status>/', recruit.recruit_application_decide, name='recruit_app_decide'),
+    path('recruit/<int:recruit_id>/cancel/', recruit.recruit_cancel, name='recruit_cancel'),
 
     # ---------------------------------------------------------------- [C] 댓글
     path("posts/<int:post_id>/comments/", comment.comment_create, name="comment_create"),

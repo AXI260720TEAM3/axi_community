@@ -3,11 +3,11 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count, Prefetch, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from ..models import Attachment, Board, BoardPermission, Post, Notification
+from ..models import Attachment, Board, BoardPermission, Notification, Post
 from ..permissions import can_write
-from django.urls import reverse
 
 
 PAGE_SIZE = 10
@@ -35,10 +35,7 @@ def qna_list(request):
                 filter=Q(answers__is_deleted=False),
                 distinct=True,
             ),
-            file_count=Count(
-                "attachments",
-                distinct=True,
-            ),
+            file_count=Count("attachments", distinct=True),
         )
         .prefetch_related(
             Prefetch(
@@ -58,11 +55,7 @@ def qna_list(request):
         ).distinct()
 
     questions = questions.order_by("-created_at")
-
-    page = Paginator(
-        questions,
-        PAGE_SIZE,
-    ).get_page(request.GET.get("page"))
+    page = Paginator(questions, PAGE_SIZE).get_page(request.GET.get("page"))
 
     return render(
         request,
@@ -85,11 +78,7 @@ def qna_detail(request, post_id):
     question = get_object_or_404(
         Post.objects.visible()
         .roots()
-        .select_related(
-            "board",
-            "writer",
-            "writer__user_type",
-        )
+        .select_related("board", "writer", "writer__user_type")
         .prefetch_related("attachments"),
         post_id=post_id,
         board__board_name=QNA_BOARD_NAME,
@@ -102,10 +91,7 @@ def qna_detail(request, post_id):
 
     if request.method == "POST":
         if not is_owner:
-            return redirect(
-                "qna_detail",
-                post_id=question.post_id,
-            )
+            return redirect("qna_detail", post_id=question.post_id)
 
         action = request.POST.get("action", "").strip()
 
@@ -114,54 +100,27 @@ def qna_detail(request, post_id):
             content = request.POST.get("content", "").strip()
 
             if not title or not content:
-                messages.error(
-                    request,
-                    "제목과 내용을 모두 입력해주세요.",
-                )
-                return redirect(
-                    "qna_detail",
-                    post_id=question.post_id,
-                )
+                messages.error(request, "제목과 내용을 모두 입력해주세요.")
+                return redirect("qna_detail", post_id=question.post_id)
 
             question.title = title
             question.content = content
-            question.save(
-                update_fields=[
-                    "title",
-                    "content",
-                ]
-            )
+            question.save(update_fields=["title", "content"])
 
-            messages.success(
-                request,
-                "질문을 수정했습니다.",
-            )
-
-            return redirect(
-                "qna_detail",
-                post_id=question.post_id,
-            )
+            messages.success(request, "질문을 수정했습니다.")
+            return redirect("qna_detail", post_id=question.post_id)
 
         if action == "delete":
             question.is_deleted = True
-            question.save(
-                update_fields=["is_deleted"]
-            )
+            question.save(update_fields=["is_deleted"])
 
-            messages.success(
-                request,
-                "질문을 삭제했습니다.",
-            )
-
+            messages.success(request, "질문을 삭제했습니다.")
             return redirect("qna_list")
 
     answers = (
         question.answers
         .filter(is_deleted=False)
-        .select_related(
-            "writer",
-            "writer__user_type",
-        )
+        .select_related("writer", "writer__user_type")
         .prefetch_related("attachments")
         .order_by("created_at")
     )
@@ -186,10 +145,7 @@ def qna_detail(request, post_id):
 
 @login_required
 def qna_ask(request):
-    board = get_object_or_404(
-        Board,
-        board_name=QNA_BOARD_NAME,
-    )
+    board = get_object_or_404(Board, board_name=QNA_BOARD_NAME)
 
     if not can_write(
         request.user,
@@ -199,15 +155,8 @@ def qna_ask(request):
         return redirect("qna_list")
 
     if request.method == "POST":
-        title = request.POST.get(
-            "title",
-            "",
-        ).strip()
-
-        content = request.POST.get(
-            "content",
-            "",
-        ).strip()
+        title = request.POST.get("title", "").strip()
+        content = request.POST.get("content", "").strip()
 
         if title and content:
             question = Post.objects.create(
@@ -225,10 +174,7 @@ def qna_ask(request):
                     file_size=f.size,
                 )
 
-            return redirect(
-                "qna_detail",
-                post_id=question.post_id,
-            )
+            return redirect("qna_detail", post_id=question.post_id)
 
         return render(
             request,
@@ -255,9 +201,7 @@ def qna_ask(request):
 @login_required
 def qna_answer(request, post_id):
     question = get_object_or_404(
-        Post.objects.visible()
-        .roots()
-        .select_related("board"),
+        Post.objects.visible().roots().select_related("board"),
         post_id=post_id,
         board__board_name=QNA_BOARD_NAME,
     )
@@ -267,21 +211,21 @@ def qna_answer(request, post_id):
         question.board,
         BoardPermission.PermissionType.ANSWER,
     ):
-        return redirect(
-            "qna_detail",
-            post_id=question.post_id,
-        )
+        return redirect("qna_detail", post_id=question.post_id)
 
     if request.method == "POST":
-        title = request.POST.get(
-            "title",
-            "",
-        ).strip()
+        existing_answer = Post.objects.filter(
+            parent=question,
+            writer=request.user,
+            is_deleted=False,
+        ).exists()
 
-        content = request.POST.get(
-            "content",
-            "",
-        ).strip()
+        if existing_answer:
+            messages.error(request, "이미 이 질문에 답변을 작성했습니다.")
+            return redirect("qna_detail", post_id=question.post_id)
+
+        title = request.POST.get("title", "").strip()
+        content = request.POST.get("content", "").strip()
 
         if title and content:
             Post.objects.create(
@@ -291,28 +235,20 @@ def qna_answer(request, post_id):
                 title=title,
                 content=content,
             )
-            
-        Notification.notify(
-    receiver=question.writer,
-    kind=Notification.Kind.ANSWER,
-    message=f"{request.user.member_name}님이 내 Q&A에 답변을 남겼습니다.",
-    link=reverse(
-        "qna_detail",
-        args=[question.post_id],
-    ),
-    actor=request.user,
-)
 
-        return redirect(
-            "qna_detail",
-            post_id=question.post_id,
-        )
+            Notification.notify(
+                receiver=question.writer,
+                kind=Notification.Kind.ANSWER,
+                message=f"{request.user.member_name}님이 내 Q&A에 답변을 남겼습니다.",
+                link=reverse("qna_detail", args=[question.post_id]),
+                actor=request.user,
+            )
 
-    return redirect(
-        "qna_detail",
-        post_id=question.post_id,
-    )
-    
+        return redirect("qna_detail", post_id=question.post_id)
+
+    return redirect("qna_detail", post_id=question.post_id)
+
+
 @login_required
 @require_POST
 def qna_accept_answer(request, post_id, answer_id):
@@ -323,14 +259,8 @@ def qna_accept_answer(request, post_id, answer_id):
     )
 
     if question.writer_id != request.user.member_id:
-        messages.error(
-            request,
-            "질문 작성자만 답변을 채택할 수 있습니다.",
-        )
-        return redirect(
-            "qna_detail",
-            post_id=question.post_id,
-        )
+        messages.error(request, "질문 작성자만 답변을 채택할 수 있습니다.")
+        return redirect("qna_detail", post_id=question.post_id)
 
     answer = get_object_or_404(
         Post.objects.visible(),
@@ -339,26 +269,11 @@ def qna_accept_answer(request, post_id, answer_id):
     )
 
     if question.accepted_answer_id is not None:
-        messages.error(
-            request,
-            "이미 채택된 답변이 있습니다.",
-        )
-        return redirect(
-            "qna_detail",
-            post_id=question.post_id,
-        )
+        messages.error(request, "이미 채택된 답변이 있습니다.")
+        return redirect("qna_detail", post_id=question.post_id)
 
     question.accepted_answer = answer
-    question.save(
-        update_fields=["accepted_answer"]
-    )
+    question.save(update_fields=["accepted_answer"])
 
-    messages.success(
-        request,
-        "답변을 채택했습니다.",
-    )
-
-    return redirect(
-        "qna_detail",
-        post_id=question.post_id,
-    )
+    messages.success(request, "답변을 채택했습니다.")
+    return redirect("qna_detail", post_id=question.post_id)

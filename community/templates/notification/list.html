@@ -43,6 +43,7 @@
                       action="{% url 'notification_delete' notification.notification_id %}"
                       class="notification-delete-form">
                   {% csrf_token %}
+                   <input type="hidden" name="page" value="{{ page.number }}">
 
                   <button type="submit"
                           class="notification-delete"

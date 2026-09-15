@@ -81,7 +81,7 @@ def recruit_apply(request, recruit_id):
             
     return redirect('recruit_detail', recruit_id=recruit_id)
 
-# 5. 지원 수락/거절 처리 (작성자 전용)
+# 5. 지원 수락/거절/번복 처리 (작성자 전용)
 @login_required
 def recruit_application_decide(request, app_id, status):
     application = get_object_or_404(RecruitApplication, pk=app_id)
@@ -90,18 +90,36 @@ def recruit_application_decide(request, app_id, status):
         messages.error(request, "권한이 없습니다.")
         return redirect('recruit_detail', recruit_id=application.recruit.recruit_id)
         
-    if status in [RecruitApplication.Status.APPROVED, RecruitApplication.Status.REJECTED]:
-        application.status = status
-        application.decided_at = timezone.now()
+    # 모델에 정의된 Enum 값 및 입력 파라미터 매핑
+    valid_statuses = {
+        RecruitApplication.Status.APPROVED: RecruitApplication.Status.APPROVED, # '승인'
+        RecruitApplication.Status.REJECTED: RecruitApplication.Status.REJECTED, # '거절'
+        RecruitApplication.Status.WAITING: RecruitApplication.Status.WAITING,  # '대기'
+    }
+
+    target_status = valid_statuses.get(status)
+
+    if target_status:
+        application.status = target_status
+        application.decided_at = timezone.now() if target_status != RecruitApplication.Status.WAITING else None
         application.save()
         
-        # 지원자에게 수락/거절 결과 알림 발송
+        # 알림 메시지 문구 설정
+        if target_status == RecruitApplication.Status.APPROVED:
+            msg = f"'{application.recruit.title}' 지원 결과: 승인되었습니다."
+        elif target_status == RecruitApplication.Status.REJECTED:
+            msg = f"'{application.recruit.title}' 지원 결과: 거절되었습니다."
+        else:
+            msg = f"'{application.recruit.title}' 지원 상태가 '대기'로 재조정되었습니다."
+
+        # 지원자에게 상태 변경 알림 발송
         Notification.notify(
             receiver=application.applicant,
             kind=Notification.Kind.RECRUIT,
-            message=f"'{application.recruit.title}' 지원 결과: {status} 되었습니다.",
+            message=msg,
             actor=request.user
         )
+        messages.success(request, f"지원 상태가 '{target_status}'(으)로 변경되었습니다.")
         
     return redirect('recruit_detail', recruit_id=application.recruit.recruit_id)
 
@@ -113,30 +131,7 @@ def recruit_close(request, recruit_id):
     recruit.save()
     return redirect('recruit_detail', recruit_id=recruit.recruit_id)
 
-@login_required
-def recruit_cancel(request, recruit_id):
-    """팀원 지원 취소 처리"""
-    if request.method == 'POST':
-        recruit = get_object_or_404(Recruit, pk=recruit_id)
-        
-        # 본인의 지원 내역 조회
-        application = RecruitApplication.objects.filter(
-            recruit=recruit, 
-            applicant=request.user
-        ).first()
-
-        if application:
-            # 이미 승인/거절 처리된 지원건은 취소할 수 없도록 방어
-            if application.status != '대기':
-                messages.error(request, "이미 작성자가 처리를 완료하여 지원을 취소할 수 없습니다.")
-            else:
-                application.delete()
-                messages.success(request, "지원이 성공적으로 취소되었습니다.")
-        else:
-            messages.error(request, "지원 내역을 찾을 수 없습니다.")
-
-    return redirect('recruit_detail', recruit_id=recruit_id)
-
+# 7. 팀원 지원 취소 처리 (지원자 전용)
 @login_required
 def recruit_cancel(request, recruit_id):
     """팀원 지원 취소 처리"""

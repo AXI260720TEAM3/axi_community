@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+{% block title %}질문 수정 · 기회를 IT-DA{% endblock %}
+
+{% block content %}
+
+<style>
+  .qna-alert {
+    display:none; position:fixed; top:50%; left:50%;
+    transform:translate(-50%, -50%); z-index:10000;
+    font-size:16px; font-weight:600; background:white;
+    border:1px solid #ddd; border-radius:8px;
+    padding:14px 20px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.15);
+  }
+
+  .qna-alert.success { color:black; }
+  .qna-alert.error { color:red; }
+
+  .existing-file {
+    display:flex; align-items:center;
+    gap:8px; margin-top:8px;
+  }
+
+  .existing-file-name {
+    min-width:0;
+    overflow-wrap:anywhere;
+  }
+
+  .existing-file-size {
+    color:#666;
+    font-size:14px;
+  }
+
+  .existing-file-remove {
+    border:0; background:none;
+    padding:0; color:#777;
+    font-size:18px; line-height:1;
+    cursor:pointer;
+  }
+
+  .existing-file-remove:hover { color:#222; }
+
+  .file-remove {
+    border:0; background:none;
+    padding:0; color:#777;
+    font-size:18px; line-height:1;
+    cursor:pointer;
+  }
+
+  .file-remove:hover { color:#222; }
+</style>
+
+{% for msg in messages %}
+  <div class="qna-alert {% if 'success' in msg.tags %}success{% else %}error{% endif %}">
+    {{ msg }}
+  </div>
+{% endfor %}
+
+<div class="head">
+  <div class="crumb">
+    <a href="{% url 'qna_list' %}">Q&amp;A</a> · 질문 수정
+  </div>
+
+  <a class="btn quiet" href="{% url 'qna_detail' question.post_id %}">
+    취소
+  </a>
+</div>
+
+<div class="panel">
+  <div class="pad">
+    <h2>질문 수정</h2>
+
+    <form method="post"
+          enctype="multipart/form-data"
+          id="question-edit-form">
+      {% csrf_token %}
+
+      <div class="field">
+        <label for="question-title">제목</label>
+
+        <input class="control"
+               id="question-title"
+               type="text"
+               name="title"
+               maxlength="250"
+               value="{{ title }}">
+      </div>
+
+      <div class="field">
+        <label for="question-content">내용</label>
+
+        <textarea class="control"
+                  id="question-content"
+                  name="content"
+                  rows="10">{{ content }}</textarea>
+      </div>
+
+      {% if attachments %}
+        <div class="field">
+          <label>
+            기존 첨부파일
+            <span class="hint">×를 누르면 삭제됩니다</span>
+          </label>
+
+          <div id="existing-files">
+            {% for f in attachments %}
+              <div class="existing-file"
+                   data-file-id="{{ f.attachment_id }}">
+
+                <span class="existing-file-name">
+                  {{ f.origin_name }}
+                </span>
+
+                <button type="button"
+                        class="existing-file-remove"
+                        title="첨부파일 삭제">
+                  ×
+                </button>
+
+                <span class="existing-file-size">
+                  {{ f.file_size|filesizeformat }}
+                </span>
+              </div>
+            {% endfor %}
+          </div>
+
+          <div id="delete-file-inputs"></div>
+        </div>
+      {% endif %}
+
+      <div class="field">
+        <label>
+          새 첨부파일
+          <span class="hint">새 파일을 추가할 수 있습니다</span>
+        </label>
+
+        <input type="file"
+               id="question-files"
+               name="files"
+               multiple
+               hidden>
+
+        <div class="dropzone" id="question-dropzone">
+          파일을 끌어다 놓거나 클릭해서 고르세요
+        </div>
+
+        <div class="attached" id="question-file-list"></div>
+      </div>
+
+      <div class="formfoot">
+        <a class="btn quiet"
+           href="{% url 'qna_detail' question.post_id %}">
+          취소
+        </a>
+
+        <button class="btn" type="submit">
+          수정 완료
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const qnaAlerts = document.querySelectorAll(".qna-alert");
+
+  qnaAlerts.forEach(function(alertMessage) {
+    alertMessage.style.display = "block";
+
+    setTimeout(function() {
+      alertMessage.style.display = "none";
+    }, 2000);
+  });
+
+  const editForm = document.getElementById("question-edit-form");
+  const titleInput = document.getElementById("question-title");
+  const contentInput = document.getElementById("question-content");
+
+  editForm.addEventListener("submit", function(event) {
+    if (!titleInput.value.trim() || !contentInput.value.trim()) {
+      event.preventDefault();
+
+      const warning = document.createElement("div");
+      warning.className = "qna-alert error";
+      warning.textContent = "제목과 내용을 모두 입력해주세요.";
+
+      document.body.appendChild(warning);
+      warning.style.display = "block";
+
+      setTimeout(function() {
+        warning.remove();
+      }, 2000);
+    }
+  });
+
+  const existingRemoveButtons = document.querySelectorAll(
+    ".existing-file-remove"
+  );
+
+  const deleteFileInputs = document.getElementById(
+    "delete-file-inputs"
+  );
+
+  existingRemoveButtons.forEach(function(button) {
+    button.addEventListener("click", function() {
+      const row = button.closest(".existing-file");
+      const fileId = row.dataset.fileId;
+
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = "delete_files";
+      input.value = fileId;
+
+      deleteFileInputs.appendChild(input);
+      row.remove();
+    });
+  });
+
+  const fileInput = document.getElementById("question-files");
+  const fileDropzone = document.getElementById("question-dropzone");
+  const fileList = document.getElementById("question-file-list");
+  const selectedFiles = new DataTransfer();
+
+  function renderFiles() {
+    fileList.innerHTML = "";
+
+    Array.from(selectedFiles.files).forEach(function(file, index) {
+      const row = document.createElement("div");
+      const name = document.createElement("span");
+      const size = document.createElement("span");
+      const remove = document.createElement("button");
+
+      row.className = "file";
+      name.className = "name";
+      size.className = "size";
+      remove.className = "file-remove";
+      remove.type = "button";
+      remove.textContent = "×";
+      remove.title = "첨부파일 삭제";
+
+      name.textContent = file.name;
+      size.textContent = (file.size / 1024).toFixed(1) + " KB";
+
+      remove.addEventListener("click", function(event) {
+        event.stopPropagation();
+
+        const remainingFiles = Array.from(selectedFiles.files);
+        selectedFiles.items.clear();
+
+        remainingFiles.forEach(function(savedFile, savedIndex) {
+          if (savedIndex !== index) {
+            selectedFiles.items.add(savedFile);
+          }
+        });
+
+        fileInput.files = selectedFiles.files;
+        renderFiles();
+      });
+
+      row.appendChild(name);
+      row.appendChild(remove);
+      row.appendChild(size);
+
+      fileList.appendChild(row);
+    });
+  }
+
+  function addFiles(files) {
+    Array.from(files).forEach(function(file) {
+      const duplicate = Array.from(
+        selectedFiles.files
+      ).some(function(savedFile) {
+        return savedFile.name === file.name &&
+               savedFile.size === file.size &&
+               savedFile.lastModified === file.lastModified;
+      });
+
+      if (!duplicate) {
+        selectedFiles.items.add(file);
+      }
+    });
+
+    fileInput.files = selectedFiles.files;
+    renderFiles();
+  }
+
+  fileDropzone.addEventListener("click", function() {
+    fileInput.value = "";
+    fileInput.click();
+  });
+
+  fileInput.addEventListener("change", function(event) {
+    addFiles(event.target.files);
+  });
+
+  fileDropzone.addEventListener("dragenter", function(event) {
+    event.preventDefault();
+  });
+
+  fileDropzone.addEventListener("dragover", function(event) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+  });
+
+  fileDropzone.addEventListener("drop", function(event) {
+    event.preventDefault();
+    addFiles(event.dataTransfer.files);
+  });
+</script>
+
+{% endblock %}

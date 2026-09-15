@@ -67,6 +67,7 @@ urlpatterns = [
     path("qna/<int:post_id>/answers/<int:answer_id>/accept/", qna.qna_accept_answer, name="qna_accept_answer"),
     path("qna/<int:post_id>/answers/<int:answer_id>/edit/", qna.qna_edit_answer, name="qna_edit_answer"),
     path("qna/<int:post_id>/answers/<int:answer_id>/delete/", qna.qna_delete_answer, name="qna_delete_answer"),
+    path("qna/<int:post_id>/edit/", qna.qna_edit, name="qna_edit"),
 
     # ---------------------------------------------------------------- [C] 쪽지
     path("messages/", message.message_box, name="message_box"),

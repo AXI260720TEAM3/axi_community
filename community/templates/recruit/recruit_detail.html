@@ -41,13 +41,21 @@
 
   <div class="post-foot">
     {% if is_owner %}
-      <div class="right">
+      <div class="right" style="display: flex; gap: 6px; justify-content: flex-end;">
         {% if not recruit.is_closed %}
           <form method="post" action="{% url 'recruit_close' recruit.recruit_id %}" style="display:inline">
             {% csrf_token %}
             <button type="submit" class="btn quiet sm" onclick="return confirm('조기 마감하시겠습니까?')">모집 마감하기</button>
           </form>
         {% endif %}
+
+        <!-- 글 삭제 버튼 -->
+        <form method="post" action="{% url 'recruit_delete' recruit.recruit_id %}" style="display:inline">
+          {% csrf_token %}
+          <button type="submit" class="btn quiet sm" style="color: #d9534f; border-color: #d9534f;" onclick="return confirm('정말로 이 모집글을 삭제하시겠습니까?')">
+            삭제하기
+          </button>
+        </form>
       </div>
     {% endif %}
   </div>

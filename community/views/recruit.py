@@ -155,3 +155,21 @@ def recruit_cancel(request, recruit_id):
             messages.error(request, "지원 내역을 찾을 수 없습니다.")
 
     return redirect('recruit_detail', recruit_id=recruit_id)
+
+# 8. 모집글 삭제 처리 (작성자 전용)
+@login_required
+def recruit_delete(request, recruit_id):
+    recruit = get_object_or_404(Recruit, pk=recruit_id, is_deleted=False)
+    
+    # 작성자 본인 확인
+    if request.user != recruit.writer:
+        messages.error(request, "삭제 권한이 없습니다.")
+        return redirect('recruit_detail', recruit_id=recruit_id)
+        
+    if request.method == 'POST':
+        recruit.is_deleted = True
+        recruit.save()
+        messages.success(request, "모집글이 삭제되었습니다.")
+        return redirect('recruit_list')
+        
+    return redirect('recruit_detail', recruit_id=recruit_id)

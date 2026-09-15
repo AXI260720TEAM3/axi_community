@@ -61,11 +61,11 @@
       <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; background: var(--wash, #f8f9fa); padding: 12px 16px; border-radius: 6px;">
         <p style="color: var(--muted); margin: 0;">이미 본 프로젝트에 지원하셨습니다. 작성자의 처리 결과를 기다려주세요.</p>
     
-    <!-- 지원 취소 폼 -->
+        <!-- 지원 취소 폼 -->
         <form method="post" action="{% url 'recruit_cancel' recruit.recruit_id %}" style="margin: 0;">
           {% csrf_token %}
           <button type="submit" class="btn quiet sm" style="color: #d9534f; border-color: #d9534f;" onclick="return confirm('정말로 지정을 취소하시겠습니까?')">
-          지원 취소하기
+            지원 취소하기
           </button>
         </form>
       </div>
@@ -84,7 +84,7 @@
   </section>
 {% endif %}
 
-{% comment %} 2. 모집 작성자 전용 지원자 관리 영역 {% endcomment %}
+{% comment %} 2. 모집 작성자 전용 지원자 관리 영역 (상태 번복 가능 수정본) {% endcomment %}
 {% if is_owner %}
   <section class="panel pad" style="margin-top: 20px;">
     <h3>지원자 현황 (작성자 전용)</h3>
@@ -95,7 +95,7 @@
           <th>지원 메시지</th>
           <th class="col-date">지원일</th>
           <th style="width: 80px; text-align: center;">상태</th>
-          <th style="width: 130px; text-align: center;">관리</th>
+          <th style="width: 200px; text-align: center;">관리 (상태변경)</th>
         </tr>
       </thead>
       <tbody>
@@ -118,12 +118,18 @@
               {% endif %}
             </td>
             <td style="text-align: center;">
-              {% if app.status == '대기' %}
-                <a href="{% url 'recruit_app_decide' app.application_id '승인' %}" class="btn sm" onclick="return confirm('승인하시겠습니까?')">승인</a>
-                <a href="{% url 'recruit_app_decide' app.application_id '거절' %}" class="btn quiet sm" onclick="return confirm('거절하시겠습니까?')">거절</a>
-              {% else %}
-                <span style="color: var(--muted); font-size: 0.85rem;">처리완료</span>
-              {% endif %}
+              <div style="display: flex; gap: 4px; justify-content: center;">
+                {% if app.status == '승인' %}
+                  <a href="{% url 'recruit_app_decide' app.application_id '거절' %}" class="btn quiet sm" onclick="return confirm('거절 상태로 변경하시겠습니까?')">거절로 변경</a>
+                  <a href="{% url 'recruit_app_decide' app.application_id '대기' %}" class="btn quiet sm" style="color: #666;" onclick="return confirm('대기 상태로 되돌리시겠습니까?')">대기로 초기화</a>
+                {% elif app.status == '거절' %}
+                  <a href="{% url 'recruit_app_decide' app.application_id '승인' %}" class="btn sm" onclick="return confirm('승인 상태로 변경하시겠습니까?')">승인으로 변경</a>
+                  <a href="{% url 'recruit_app_decide' app.application_id '대기' %}" class="btn quiet sm" style="color: #666;" onclick="return confirm('대기 상태로 되돌리시겠습니까?')">대기로 초기화</a>
+                {% else %}
+                  <a href="{% url 'recruit_app_decide' app.application_id '승인' %}" class="btn sm" onclick="return confirm('승인하시겠습니까?')">승인</a>
+                  <a href="{% url 'recruit_app_decide' app.application_id '거절' %}" class="btn quiet sm" onclick="return confirm('거절하시겠습니까?')">거절</a>
+                {% endif %}
+              </div>
             </td>
           </tr>
         {% empty %}

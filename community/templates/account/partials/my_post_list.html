@@ -4,17 +4,25 @@
       {% for post in posts %}
         <tr>
           <td class="subject">
-            <a href="{% url 'post_detail' post.pk %}">{{ post.title }}</a>
+            <a href="{% url 'post_detail' post.post_id %}">{{ post.title }}</a>
             <span class="meta-inline">[{{ post.comments.count|default:0 }}]</span>
           </td>
+          {% if board_name == '추천한글' %}
+            <td class="col-writer" style="width: 120px; text-align: center;">
+              {{ post.writer.member_name|default:post.writer.username }}
+            </td>
+          {% endif %}
           <td class="col-date">{{ post.created_at|date:"m-d" }}</td>
         </tr>
       {% endfor %}
     </tbody>
   </table>
 {% else %}
-  <div class="empty" id="myempty">
-    <b>아직 이 게시판에 쓴 글이 없습니다.</b>
-    궁금한 게 생기면 언제든 물어보세요.
+  <div class="empty" id="myempty" style="padding: 32px 0; text-align: center; color: var(--muted, #888);">
+    {% if board_name == '추천한글' %}
+      <b>아직 추천한 게시글이 없습니다.</b>
+    {% else %}
+      <b>아직 이 게시판에 쓴 글이 없습니다.</b>
+    {% endif %}
   </div>
 {% endif %}

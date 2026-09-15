@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash, logout
 from django.contrib.auth.decorators import login_required
 
-from community.models import Post, Board, Message
+from community.models import Post, Board, Message, PostLike
 
 
 @login_required
@@ -92,19 +92,39 @@ def profile_edit(request):
 
 @login_required
 def my_posts_ajax(request):
-  """내가 쓴 글 탭 클릭 시 AJAX 요청을 처리하는 뷰"""
-  board_name = request.GET.get('board_name', '자유게시판')
+    """내가 쓴 글 및 추천한 글 탭 클릭 시 AJAX 요청을 처리하는 뷰"""
+    board_name = request.GET.get('board_name', '자유게시판')
+    user = request.user
 
-  posts = (
-      Post.objects.filter(
-          writer=request.user, board__board_name=board_name, is_deleted=False
-      )
-      .select_related('board')
-      .order_by('-created_at')
-  )
+    # 1. '추천한글' 탭 클릭 시
+    if board_name == '추천한글':
+        # PostLike 테이블을 통해 내가 좋아요를 누른 게시글 목록 조회
+        posts = (
+            Post.objects.filter(
+                likes__member=user,  
+                is_deleted=False
+            )
+            .select_related('board', 'writer')
+            .order_by('-likes__created_at')  # 추천 누른 최근 순 정렬
+        )
+        
+        # 만약 ManyToManyField (예: likes = models.ManyToManyField(User)) 관계라면:
+        # posts = Post.objects.filter(likes=user, is_deleted=False).select_related('board', 'writer').order_by('-created_at')
 
-  context = {'posts': posts}
-  return render(request, 'account/partials/my_post_list.html', context)
+    # 2. 일반 게시판 탭 클릭 시 (내가 쓴 글)
+    else:
+        posts = (
+            Post.objects.filter(
+                writer=user, 
+                board__board_name=board_name, 
+                is_deleted=False
+            )
+            .select_related('board')
+            .order_by('-created_at')
+        )
+
+    context = {'posts': posts, 'board_name': board_name}
+    return render(request, 'account/partials/my_post_list.html', context)
 
 @login_required
 def account_delete(request):

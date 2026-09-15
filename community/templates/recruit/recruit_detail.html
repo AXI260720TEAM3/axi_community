@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}{{ recruit.title }} · 기회를 IT-DA{% endblock %}
+
+{% block content %}
+<div class="head">
+  <div class="crumb"><a href="{% url 'recruit_list' %}">팀원 모집</a> · 모집 상세</div>
+  <a class="btn quiet" href="{% url 'recruit_list' %}">목록으로</a>
+</div>
+
+<article class="panel">
+  <div class="post-head">
+    <div style="margin-bottom: 8px;">
+      {% if recruit.is_closed %}
+        <span class="note" style="background:#eee; padding:3px 8px; border-radius:4px;">모집 마감</span>
+      {% else %}
+        <span style="background:var(--wash); color:var(--primary); padding:3px 8px; border-radius:4px; font-weight:bold;">모집중</span>
+      {% endif %}
+      <span class="meta-inline" style="margin-left: 6px;">분야: <b>{{ recruit.field }}</b></span>
+    </div>
+    <h1>{{ recruit.title }}</h1>
+    <div class="post-meta">
+      <span>
+        작성자: 
+        {% if user.is_authenticated and not is_owner %}
+          <a class="message-open" href="{% url 'message_box' %}?receiver={{ recruit.writer.username|urlencode }}"
+             data-receiver="{{ recruit.writer.username }}" data-name="{{ recruit.writer.member_name }}">{{ recruit.writer.member_name }}</a>
+          {% include "_usertype.html" with member=recruit.writer %}
+        {% else %}
+          {{ recruit.writer.member_name }} {% include "_usertype.html" with member=recruit.writer %}
+        {% endif %}
+      </span>
+      <span>작성일: {{ recruit.created_at|date:"Y년 n월 j일 H:i" }}</span>
+      <span>모집 인원: <b>{{ recruit.approved_count }}</b> / {{ recruit.headcount }} 명</span>
+      <span>마감일: {{ recruit.deadline|date:"Y-m-d" }}</span>
+    </div>
+  </div>
+
+  <div class="post-body">
+    {{ recruit.content|linebreaks }}
+  </div>
+
+  <div class="post-foot">
+    {% if is_owner %}
+      <div class="right">
+        {% if not recruit.is_closed %}
+          <form method="post" action="{% url 'recruit_close' recruit.recruit_id %}" style="display:inline">
+            {% csrf_token %}
+            <button type="submit" class="btn quiet sm" onclick="return confirm('조기 마감하시겠습니까?')">모집 마감하기</button>
+          </form>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</article>
+
+{% comment %} 1. 일반 회원 지원하기 폼 영역 {% endcomment %}
+{% if user.is_authenticated and not is_owner %}
+  <section class="panel pad" style="margin-top: 20px;">
+    <h3>팀원 지원하기</h3>
+    {% if has_applied %}
+      <p style="color: var(--muted); margin-top: 10px;">이미 본 프로젝트에 지원하셨습니다. 작성자의 처리 결과를 기다려주세요.</p>
+    {% elif recruit.is_closed %}
+      <p style="color: var(--muted); margin-top: 10px;">모집이 마감되어 더 이상 지원할 수 없습니다.</p>
+    {% else %}
+      <form method="post" action="{% url 'recruit_apply' recruit.recruit_id %}" style="margin-top: 15px;">
+        {% csrf_token %}
+        <div class="field">
+          <label for="app-message">지원 메시지 / 한줄 소개</label>
+          <textarea class="control" id="app-message" name="message" rows="3" placeholder="기술 스택, 참여 가능 시간 등 작성자에게 남길 메시지를 적어주세요." required></textarea>
+        </div>
+        <button type="submit" class="btn" style="margin-top: 10px;">지원서 제출</button>
+      </form>
+    {% endif %}
+  </section>
+{% endif %}
+
+{% comment %} 2. 모집 작성자 전용 지원자 관리 영역 {% endcomment %}
+{% if is_owner %}
+  <section class="panel pad" style="margin-top: 20px;">
+    <h3>지원자 현황 (작성자 전용)</h3>
+    <table class="list" style="margin-top: 15px;">
+      <thead>
+        <tr>
+          <th class="col-writer">지원자</th>
+          <th>지원 메시지</th>
+          <th class="col-date">지원일</th>
+          <th style="width: 80px; text-align: center;">상태</th>
+          <th style="width: 130px; text-align: center;">관리</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for app in applications %}
+          <tr>
+            <td class="col-writer">
+              <a class="message-open" href="{% url 'message_box' %}?receiver={{ app.applicant.username|urlencode }}"
+                 data-receiver="{{ app.applicant.username }}" data-name="{{ app.applicant.member_name }}">{{ app.applicant.member_name }}</a>
+              {% include "_usertype.html" with member=app.applicant %}
+            </td>
+            <td>{{ app.message|linebreaksbr }}</td>
+            <td class="col-date">{{ app.applied_at|date:"m-d H:i" }}</td>
+            <td style="text-align: center;">
+              {% if app.status == '승인' %}
+                <span style="color: green; font-weight: bold;">승인</span>
+              {% elif app.status == '거절' %}
+                <span style="color: red;">거절</span>
+              {% else %}
+                <span style="color: orange;">대기</span>
+              {% endif %}
+            </td>
+            <td style="text-align: center;">
+              {% if app.status == '대기' %}
+                <a href="{% url 'recruit_app_decide' app.application_id '승인' %}" class="btn sm" onclick="return confirm('승인하시겠습니까?')">승인</a>
+                <a href="{% url 'recruit_app_decide' app.application_id '거절' %}" class="btn quiet sm" onclick="return confirm('거절하시겠습니까?')">거절</a>
+              {% else %}
+                <span style="color: var(--muted); font-size: 0.85rem;">처리완료</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 24px 0; color: var(--muted);">
+              아직 지원자가 없습니다.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endif %}
+{% endblock %}

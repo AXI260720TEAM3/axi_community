@@ -32,7 +32,7 @@
 <aside class="rail">
   <a class="wordmark" href="{% url 'home' %}" aria-label="기회를 IT-DA 홈으로">기회를 IT-DA<span>국비지원 교육과정 정보공유</span></a>
 
-  <nav>
+<nav>
     <h4>게시판</h4>
     {% for b in nav_boards %}
       {% if b.board_name == 'Q&A' %}
@@ -43,6 +43,10 @@
            {% if nav_current == b.board_id %}aria-current="true"{% endif %}>{{ b.board_name }}</a>
       {% endif %}
     {% endfor %}
+
+    <!-- ⬇️ 여기에 팀원 모집 메뉴를 추가하세요 ⬇️ -->
+    <a class="navlink" href="{% url 'recruit_list' %}"
+       {% if nav_current == 'recruit' %}aria-current="true"{% endif %}>프로젝트 팀원 모집</a>
 
     <h4>내 활동</h4>
     <a class="navlink" href="{% url 'message_box' %}"

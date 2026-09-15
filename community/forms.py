@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from community.models import UserType
+from .models import Recruit, RecruitApplication
 
 User = get_user_model()
 
@@ -45,3 +46,19 @@ class SignupForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+
+class RecruitForm(forms.ModelForm):
+    class Meta:
+        model = Recruit
+        fields = ['title', 'field', 'headcount', 'deadline', 'content']
+        widgets = {
+            'deadline': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+class RecruitApplicationForm(forms.ModelForm):
+    class Meta:
+        model = RecruitApplication
+        fields = ['message']
+        widgets = {
+            'message': forms.Textarea(attrs={'rows': 3, 'placeholder': '간단한 자기소개나 지원 동기를 남겨주세요.'}),
+        }

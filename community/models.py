@@ -152,6 +152,11 @@ class Member(AbstractUser):
 
 # ================================================================ 게시판
 
+# Q&A 는 목록·상세 화면이 따로 있어서 코드에서 갈라야 합니다.
+# 게시판 이름은 board 표의 데이터라 언제든 바뀔 수 있으니, 비교는 여기 한 곳만 봅니다.
+QNA_BOARD_NAME = "Q&A"
+
+
 class Board(models.Model):
     """공지사항 / 자유게시판 / Q&A / 취업정보 / 멘토의 취업비밀"""
 
@@ -172,6 +177,11 @@ class Board(models.Model):
 
     def __str__(self):
         return self.board_name
+
+    @property
+    def is_qna(self):
+        """Q&A 게시판인지. 이름을 직접 비교하지 말고 이것을 쓰세요."""
+        return self.board_name == QNA_BOARD_NAME
 
 
 class BoardPermission(models.Model):

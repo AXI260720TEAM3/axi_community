@@ -9,7 +9,7 @@ from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 
-from ..models import Board, Member, Post
+from ..models import QNA_BOARD_NAME, Board, Member, Post
 from ..permissions import can_write, write_denied_reason
 
 PAGE_SIZE = 10
@@ -36,7 +36,7 @@ def home(request):
         for name in ("공지사항", "자유게시판", "취업정보", "멘토의 취업비밀")
     ]
 
-    qna_board = boards.get("Q&A")
+    qna_board = boards.get(QNA_BOARD_NAME)
     waiting = []
     if qna_board:
         waiting = list(
@@ -50,7 +50,7 @@ def home(request):
 
     popular = list(
         Post.objects.visible().roots()
-        .exclude(board__board_name="Q&A")
+        .exclude(board__board_name=QNA_BOARD_NAME)
         .select_related("board", "writer")
         .annotate(like_count=Count("likes", distinct=True))
         .filter(like_count__gt=0)
@@ -75,7 +75,7 @@ def board_list(request, board_id):
     board = get_object_or_404(Board, pk=board_id)
 
     # Q&A 는 화면 구조가 달라서 따로 관리합니다. [C] 담당
-    if board.board_name == "Q&A":
+    if board.is_qna:
         return redirect("qna_list")
 
     keyword = request.GET.get("q", "").strip()
@@ -123,7 +123,12 @@ def board_list(request, board_id):
     # 같은 값이 여러 개일 때 순서가 흔들리지 않게 항상 post_id 를 보조 기준으로 둡니다
     posts = posts.order_by(SORT_OPTIONS[sort][1], "-post_id")
 
-    page = Paginator(posts, PAGE_SIZE).get_page(request.GET.get("page"))
+    paginator = Paginator(posts, PAGE_SIZE)
+    page = paginator.get_page(request.GET.get("page"))
+
+    # 글이 쌓여도 번호가 줄줄이 늘어나지 않게 현재 쪽 주변만 보여줍니다.
+    # 사이에 낀 구간은 Paginator.ELLIPSIS('…') 로 나옵니다.
+    page_range = paginator.get_elided_page_range(page.number, on_each_side=2, on_ends=1)
 
     return render(
         request,
@@ -138,5 +143,7 @@ def board_list(request, board_id):
             "nav_current": board.board_id,
             "sort": sort,
             "sort_options": SORT_OPTIONS,
+            "page_range": page_range,
+            "ellipsis": Paginator.ELLIPSIS,
         },
     )

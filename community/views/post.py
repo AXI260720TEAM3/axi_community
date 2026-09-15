@@ -1,8 +1,8 @@
 """
 [A] 팀장 — 글쓰기 · 수정 · 삭제 · 첨부파일
 
-post_detail 은 목록에서 제목을 눌렀을 때 화면이 뜨도록 읽기 기능만 채워두었습니다.
-나머지는 뼈대만 있습니다.
+글쓰기·수정·삭제·첨부 다운로드·추천까지 모두 동작합니다.
+Q&A 글은 화면이 따로 있어서 post_detail 에서 qna_detail 로 넘깁니다.
 """
 
 from django.contrib.auth.decorators import login_required
@@ -23,19 +23,30 @@ from django.db.models import F
 
 logger = logging.getLogger(__name__)
 
+# 조회수 중복 집계를 막으려고 세션에 남겨두는 게시글 수
+SEEN_LIMIT = 50
+
 
 def post_detail(request, post_id):
     post = get_object_or_404(
         Post.objects.select_related("board", "writer"), pk=post_id, is_deleted=False
     )
 
+    # Q&A 는 화면 구조가 달라서 qna_detail 이 따로 담당합니다. [C]
+    # 답변글은 자기 화면이 없으므로 원 질문으로 보냅니다.
+    # 조회수를 올리기 전에 빠져나가야 넘어간 화면과 숫자가 어긋나지 않습니다.
+    if post.board.is_qna:
+        return redirect("qna_detail", post_id=post.parent_id or post.post_id)
+
     # 조회수: 한 번 본 글은 이 브라우저 세션이 끝날 때까지 다시 세지 않습니다.
-    seen = request.session.setdefault("seen_posts", [])
+    # 세션에 최근 SEEN_LIMIT 개만 남깁니다. 다 쌓으면 세션이 계속 불어납니다.
+    # 그보다 더 많이 돌아본 뒤 옛 글로 되돌아가면 조회수가 한 번 더 오릅니다. 그 정도는 감수합니다.
+    seen = request.session.get("seen_posts", [])
     if post.post_id not in seen:
         Post.objects.filter(pk=post.post_id).update(view_count=F("view_count") + 1)
         post.view_count += 1
         seen.append(post.post_id)
-        request.session.modified = True
+        request.session["seen_posts"] = seen[-SEEN_LIMIT:]
     return render(
         request,
         "board/detail.html",
@@ -91,7 +102,8 @@ def post_create(request, board_id):
         if not title or not content:
             messages.error(request,"제목과 내용을 모두 입력하세요.", extra_tags="alert")
             return render(request, "board/form.html",
-                          {"board":board,"title":title,"content":content})
+                          {"board":board,"title":title,"content":content,
+                           "nav_current":board.board_id})
 
         files = request.FILES.getlist("files")
         error = attachment_error(files)
@@ -99,7 +111,8 @@ def post_create(request, board_id):
         if error:
             messages.error(request, error, extra_tags="alert")
             return render(request, "board/form.html",
-                          {"board":board,"title":title,"content":content})
+                          {"board":board,"title":title,"content":content,
+                           "nav_current":board.board_id})
 
         post = Post.objects.create(
             board=board,
@@ -116,7 +129,8 @@ def post_create(request, board_id):
             )
         return redirect("post_detail",post_id=post.post_id)
     
-    return render(request, "board/form.html",{"board": board})
+    return render(request, "board/form.html",
+                  {"board": board, "nav_current": board.board_id})
 
 
 @login_required
@@ -182,9 +196,6 @@ def post_update(request, post_id):
         "nav_current": post.board_id,
     })
 
-    # TODO [A] 작성자 본인인지 확인(permissions.is_owner) → 수정 → updated_at 갱신
-    #raise NotImplementedError("post_update — [A] 팀장 담당")
-
 
 @login_required
 def post_delete(request, post_id):
@@ -200,9 +211,6 @@ def post_delete(request, post_id):
     
     return redirect("post_detail", post_id=post.post_id)
 
-    # TODO [A] 실제로 지우지 말고 is_deleted = True 로 표시(삭제 플래그)
-    # raise NotImplementedError("post_delete — [A] 팀장 담당")
-
 
 def attachment_download(request, attachment_id):
     a = get_object_or_404(Attachment, pk=attachment_id, post__is_deleted=False)
@@ -212,24 +220,22 @@ def attachment_download(request, attachment_id):
     except FileNotFoundError:
         logger.warning("첨부파일 없음: id=%s path=%s", a.attachment_id, a.stored_path.name)
         messages.error(request, "파일을 찾을 수 없습니다. 관리자에게 문의하세요.", extra_tags="alert")
-        if a.post.board.board_name == "Q&A":
+        if a.post.board.is_qna:
             return redirect("qna_detail", post_id=a.post.parent_id or a.post_id)
         return redirect("post_detail", post_id=a.post_id)
     
     return FileResponse(f, as_attachment=True, filename=a.origin_name)
 
-    # # TODO [A] FileResponse 로 내려주기. 다운로드 파일명은 origin_name 을 사용합니다.
-    # raise NotImplementedError("attachment_download — [A] 팀장 담당")
-
 @login_required
 def post_like(request, post_id):
   """게시글 / Q&A 질문 / 답변 추천 및 추천 취소 토글 함수"""
-  post = get_object_or_404(Post, pk=post_id)
+  # 삭제된 글은 상세 화면이 404 라서, 여기도 같이 막아야 추천수만 오르는 일이 없습니다
+  post = get_object_or_404(Post, pk=post_id, is_deleted=False)
 
   # [리다이렉트 목적지 계산 함수]
   def get_redirect_response():
     # Q&A 게시판의 글인 경우
-    if post.board and post.board.board_name == "Q&A":
+    if post.board and post.board.is_qna:
       # 답변글(parent가 있음)을 추천했으면 원본 질문 ID로, 질문글이면 본인 ID로 이동
       target_q_id = post.parent_id if post.parent_id else post.post_id
       return redirect("qna_detail", post_id=target_q_id)

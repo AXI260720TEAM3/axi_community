@@ -26,9 +26,19 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# .env 에서 읽습니다. 값이 없으면 True 라서 개발할 때는 지금까지와 똑같이 동작합니다.
+# 외부에 공개하는 기기(터널 배포)에서만 .env 에 DEBUG=False 를 넣으세요.
+# 'false' / 'FALSE' 처럼 적어도 되게 대소문자와 앞뒤 공백은 무시합니다.
+DEBUG = os.getenv('DEBUG', 'True').strip().lower() == 'true'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['itda.taila66801.ts.net', 'localhost', '127.0.0.1']
+
+# 터널 주소에서 들어온 폼 제출을 신뢰하겠다는 뜻입니다.
+# 이게 없으면 로그인·글쓰기가 전부 403 으로 막힙니다. https:// 를 꼭 붙이세요.
+CSRF_TRUSTED_ORIGINS = ['https://itda.taila66801.ts.net']
+
+# 바깥 https 는 터널이 처리하고 Django 에는 http 로 들어옵니다. 그 사실을 알려줍니다.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # Application definition
@@ -46,6 +56,7 @@ AUTH_USER_MODEL = 'community.Member'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -133,6 +144,9 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# collectstatic 이 파일을 모아둘 곳. WhiteNoise 가 여기서 꺼내 씁니다.
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # @login_required 가 걸린 화면에 비로그인 상태로 들어오면 여기로 보냅니다.
 LOGIN_URL = 'login'

@@ -1,11 +1,3 @@
-"""
-[C] 알림
-
-알림 목록 조회
-알림 하나 읽음 처리
-알림 전체 읽음 처리
-"""
-
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -60,5 +52,19 @@ def notification_read_all(request):
     ).update(
         read_at=timezone.now(),
     )
+
+    return redirect("notification_list")
+
+
+@login_required
+@require_POST
+def notification_delete(request, notification_id):
+    notification = get_object_or_404(
+        Notification,
+        notification_id=notification_id,
+        receiver=request.user,
+    )
+
+    notification.delete()
 
     return redirect("notification_list")

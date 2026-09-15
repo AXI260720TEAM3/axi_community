@@ -35,6 +35,7 @@
             <div class="notification-info">
 
               <div class="notification-meta">
+
                 <span class="tag">
                   {{ notification.get_kind_display }}
                 </span>
@@ -46,6 +47,24 @@
                 <time>
                   {{ notification.created_at|date:"Y.m.d H:i" }}
                 </time>
+
+                <form
+                  method="post"
+                  action="{% url 'notification_delete' notification.notification_id %}"
+                  class="notification-delete-form"
+                >
+                  {% csrf_token %}
+                  <button
+                    type="submit"
+                    class="notification-delete"
+                    aria-label="알림 삭제"
+                    title="삭제"
+                    onclick="return confirm('알림을 삭제하시겠습니까?');"
+                  >
+                    ×
+                  </button>
+                </form>
+
               </div>
 
               <form
@@ -149,6 +168,28 @@
   font-size: 11px;
   font-weight: 700;
   color: #2f6d5d;
+}
+
+.notification-delete-form {
+  margin: 0;
+  padding: 0;
+}
+
+.notification-delete {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #999;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.notification-delete:hover {
+  color: #444;
 }
 
 .notification-link {

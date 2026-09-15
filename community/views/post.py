@@ -29,6 +29,12 @@ def post_detail(request, post_id):
         Post.objects.select_related("board", "writer"), pk=post_id, is_deleted=False
     )
 
+    # Q&A 는 화면 구조가 달라서 qna_detail 이 따로 담당합니다. [C]
+    # 답변글은 자기 화면이 없으므로 원 질문으로 보냅니다.
+    # 조회수를 올리기 전에 빠져나가야 넘어간 화면과 숫자가 어긋나지 않습니다.
+    if post.board.board_name == "Q&A":
+        return redirect("qna_detail", post_id=post.parent_id or post.post_id)
+
     # 조회수: 한 번 본 글은 이 브라우저 세션이 끝날 때까지 다시 세지 않습니다.
     seen = request.session.setdefault("seen_posts", [])
     if post.post_id not in seen:
@@ -224,7 +230,8 @@ def attachment_download(request, attachment_id):
 @login_required
 def post_like(request, post_id):
   """게시글 / Q&A 질문 / 답변 추천 및 추천 취소 토글 함수"""
-  post = get_object_or_404(Post, pk=post_id)
+  # 삭제된 글은 상세 화면이 404 라서, 여기도 같이 막아야 추천수만 오르는 일이 없습니다
+  post = get_object_or_404(Post, pk=post_id, is_deleted=False)
 
   # [리다이렉트 목적지 계산 함수]
   def get_redirect_response():

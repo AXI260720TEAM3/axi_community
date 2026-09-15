@@ -54,7 +54,14 @@
 
       <div class="cmt">
         <div class="cmt-top">
-          {% if user.is_authenticated and c.writer_id != user.member_id %}
+          {% comment %}
+            익명 게시판에서는 글쓴이가 자기 글에 단 댓글로 신원이 드러납니다.
+            이름·유형 배지·쪽지 링크(아이디가 들어갑니다)를 모두 가려야 익명이 유지됩니다.
+            다른 사람의 댓글은 원래대로 이름을 보여줍니다.
+          {% endcomment %}
+          {% if post.board.is_anonymous and c.writer_id == post.writer_id %}
+            <b>글쓴이 (익명)</b>
+          {% elif user.is_authenticated and c.writer_id != user.member_id %}
             <a class="message-open"
                href="{% url 'message_box' %}?receiver={{ c.writer.username|urlencode }}"
                data-receiver="{{ c.writer.username }}"
@@ -65,7 +72,9 @@
             <b>{{ c.writer.member_name }}</b>
           {% endif %}
 
-          {% include "_usertype.html" with member=c.writer %}
+          {% if not post.board.is_anonymous or c.writer_id != post.writer_id %}
+            {% include "_usertype.html" with member=c.writer %}
+          {% endif %}
           <time>{{ c.created_at|date:"n월 j일 H:i" }}</time>
 
           {% if c.writer_id == user.member_id %}
@@ -98,8 +107,12 @@
         {% if reply.parent_id == c.comment_id %}
           <div class="cmt cmt-reply">
             <div class="cmt-top">
-              <b>{{ reply.writer.member_name }}</b>
-              {% include "_usertype.html" with member=reply.writer %}
+              {% if post.board.is_anonymous and reply.writer_id == post.writer_id %}
+                <b>글쓴이 (익명)</b>
+              {% else %}
+                <b>{{ reply.writer.member_name }}</b>
+                {% include "_usertype.html" with member=reply.writer %}
+              {% endif %}
               <time>{{ reply.created_at|date:"n월 j일 H:i" }}</time>
 
               {% if reply.writer_id == user.member_id %}

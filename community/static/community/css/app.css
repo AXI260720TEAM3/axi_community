@@ -93,10 +93,16 @@ table.list tr:hover td{background:#FAFBFA}
 .writer{cursor:pointer;border-bottom:1px dotted #B9C4C0}
 .writer:hover{color:var(--chalk);border-color:var(--chalk)}
 
-.pager{display:flex;justify-content:center;gap:5px;margin-top:20px}
-.pager button{min-width:32px;height:32px;border:1px solid var(--rule);background:var(--paper);border-radius:5px;cursor:pointer;font-size:13.5px;color:var(--muted)}
-.pager button[aria-current="true"]{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
-.pager button:hover:not([aria-current="true"]){border-color:#B9C4C0;color:var(--ink)}
+/* 페이지 번호. Q&A 는 button, 다른 게시판은 a 를 쓰므로 둘 다 같은 모양으로 맞춥니다.
+   a 에도 높이를 주려고 inline-flex 로 가운데 정렬합니다. */
+.pager{display:flex;justify-content:center;align-items:center;gap:5px;margin-top:20px}
+.pager button,.pager a,.pager .step{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;padding:0 6px;border:1px solid var(--rule);background:var(--paper);border-radius:5px;cursor:pointer;font-size:13.5px;color:var(--muted);text-decoration:none}
+.pager button[aria-current="true"],.pager a[aria-current="true"]{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+.pager button:hover:not([aria-current="true"]):not([disabled]),.pager a:hover:not([aria-current="true"]){border-color:#B9C4C0;color:var(--ink)}
+/* 첫 쪽·마지막 쪽에서도 이전/다음 자리를 비우지 않고 흐리게 남겨 둡니다 */
+.pager button[disabled],.pager .step.off{opacity:.4;cursor:default;pointer-events:none}
+/* 생략 표시(…)는 칸처럼 보이지 않게 테두리를 없앱니다 */
+.pager .gap{border:0;background:none;min-width:18px;cursor:default}
 
 /* ---------- 게시글 ---------- */
 .post-head{padding:22px 24px 16px;border-bottom:1px solid var(--rule)}

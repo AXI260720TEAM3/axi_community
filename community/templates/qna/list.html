@@ -113,6 +113,8 @@
             </span>
           {% endif %}
 
+          {% include "_usertype.html" with member=q.writer %}
+
         </td>
 
         <!-- 2. 질문 추천수 열 추가 -->
@@ -156,6 +158,8 @@
                 {{ a.writer.member_name }}
               </span>
             {% endif %}
+
+            {% include "_usertype.html" with member=a.writer %}
 
           </td>
 

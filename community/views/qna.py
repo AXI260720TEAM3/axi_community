@@ -18,11 +18,7 @@ def qna_list(request):
     board = get_object_or_404(Board, board_name=QNA_BOARD_NAME)
     keyword = request.GET.get("q", "").strip()
 
-    answers_queryset = (
-        Post.objects.visible()
-        .select_related("writer", "writer__user_type")
-        .order_by("created_at")
-    )
+    answers_queryset = Post.objects.visible().select_related("writer", "writer__user_type").order_by("created_at")
 
     questions = (
         Post.objects.visible()
@@ -30,20 +26,10 @@ def qna_list(request):
         .filter(board=board)
         .select_related("writer", "writer__user_type")
         .annotate(
-            answer_count=Count(
-                "answers",
-                filter=Q(answers__is_deleted=False),
-                distinct=True,
-            ),
+            answer_count=Count("answers", filter=Q(answers__is_deleted=False), distinct=True),
             file_count=Count("attachments", distinct=True),
         )
-        .prefetch_related(
-            Prefetch(
-                "answers",
-                queryset=answers_queryset,
-                to_attr="visible_answers",
-            )
-        )
+        .prefetch_related(Prefetch("answers", queryset=answers_queryset, to_attr="visible_answers"))
     )
 
     if keyword:
@@ -57,37 +43,23 @@ def qna_list(request):
     questions = questions.order_by("-created_at")
     page = Paginator(questions, PAGE_SIZE).get_page(request.GET.get("page"))
 
-    return render(
-        request,
-        "qna/list.html",
-        {
-            "board": board,
-            "page": page,
-            "keyword": keyword,
-            "can_ask": can_write(
-                request.user,
-                board,
-                BoardPermission.PermissionType.QUESTION,
-            ),
-            "nav_current": "qna",
-        },
-    )
+    return render(request, "qna/list.html", {
+        "board": board,
+        "page": page,
+        "keyword": keyword,
+        "can_ask": can_write(request.user, board, BoardPermission.PermissionType.QUESTION),
+        "nav_current": "qna",
+    })
 
 
 def qna_detail(request, post_id):
     question = get_object_or_404(
-        Post.objects.visible()
-        .roots()
-        .select_related("board", "writer", "writer__user_type")
-        .prefetch_related("attachments"),
+        Post.objects.visible().roots().select_related("board", "writer", "writer__user_type").prefetch_related("attachments"),
         post_id=post_id,
         board__board_name=QNA_BOARD_NAME,
     )
 
-    is_owner = (
-        request.user.is_authenticated
-        and question.writer_id == request.user.member_id
-    )
+    is_owner = request.user.is_authenticated and question.writer_id == request.user.member_id
 
     if request.method == "POST":
         if not is_owner:
@@ -125,33 +97,21 @@ def qna_detail(request, post_id):
         .order_by("created_at")
     )
 
-    return render(
-        request,
-        "qna/detail.html",
-        {
-            "question": question,
-            "answers": answers,
-            "attachments": question.attachments.all(),
-            "is_owner": is_owner,
-            "can_answer": can_write(
-                request.user,
-                question.board,
-                BoardPermission.PermissionType.ANSWER,
-            ),
-            "nav_current": "qna",
-        },
-    )
+    return render(request, "qna/detail.html", {
+        "question": question,
+        "answers": answers,
+        "attachments": question.attachments.all(),
+        "is_owner": is_owner,
+        "can_answer": can_write(request.user, question.board, BoardPermission.PermissionType.ANSWER),
+        "nav_current": "qna",
+    })
 
 
 @login_required
 def qna_ask(request):
     board = get_object_or_404(Board, board_name=QNA_BOARD_NAME)
 
-    if not can_write(
-        request.user,
-        board,
-        BoardPermission.PermissionType.QUESTION,
-    ):
+    if not can_write(request.user, board, BoardPermission.PermissionType.QUESTION):
         return redirect("qna_list")
 
     if request.method == "POST":
@@ -159,43 +119,25 @@ def qna_ask(request):
         content = request.POST.get("content", "").strip()
 
         if title and content:
-            question = Post.objects.create(
-                board=board,
-                writer=request.user,
-                title=title,
-                content=content,
-            )
+            question = Post.objects.create(board=board, writer=request.user, title=title, content=content)
 
             for f in request.FILES.getlist("files"):
-                Attachment.objects.create(
-                    post=question,
-                    origin_name=f.name,
-                    stored_path=f,
-                    file_size=f.size,
-                )
+                Attachment.objects.create(post=question, origin_name=f.name, stored_path=f, file_size=f.size)
 
             return redirect("qna_detail", post_id=question.post_id)
 
-        return render(
-            request,
-            "qna/ask.html",
-            {
-                "board": board,
-                "title": title,
-                "content": content,
-                "error": "제목과 내용을 모두 입력해주세요.",
-                "nav_current": "qna",
-            },
-        )
-
-    return render(
-        request,
-        "qna/ask.html",
-        {
+        return render(request, "qna/ask.html", {
             "board": board,
+            "title": title,
+            "content": content,
+            "error": "제목과 내용을 모두 입력해주세요.",
             "nav_current": "qna",
-        },
-    )
+        })
+
+    return render(request, "qna/ask.html", {
+        "board": board,
+        "nav_current": "qna",
+    })
 
 
 @login_required
@@ -206,19 +148,11 @@ def qna_answer(request, post_id):
         board__board_name=QNA_BOARD_NAME,
     )
 
-    if not can_write(
-        request.user,
-        question.board,
-        BoardPermission.PermissionType.ANSWER,
-    ):
+    if not can_write(request.user, question.board, BoardPermission.PermissionType.ANSWER):
         return redirect("qna_detail", post_id=question.post_id)
 
     if request.method == "POST":
-        existing_answer = Post.objects.filter(
-            parent=question,
-            writer=request.user,
-            is_deleted=False,
-        ).exists()
+        existing_answer = Post.objects.filter(parent=question, writer=request.user, is_deleted=False).exists()
 
         if existing_answer:
             messages.error(request, "이미 이 질문에 답변을 작성했습니다.")
@@ -228,13 +162,16 @@ def qna_answer(request, post_id):
         content = request.POST.get("content", "").strip()
 
         if title and content:
-            Post.objects.create(
+            answer = Post.objects.create(
                 board=question.board,
                 writer=request.user,
                 parent=question,
                 title=title,
                 content=content,
             )
+
+            for f in request.FILES.getlist("files"):
+                Attachment.objects.create(post=answer, origin_name=f.name, stored_path=f, file_size=f.size)
 
             Notification.notify(
                 receiver=question.writer,
@@ -262,11 +199,7 @@ def qna_accept_answer(request, post_id, answer_id):
         messages.error(request, "질문 작성자만 답변을 채택할 수 있습니다.")
         return redirect("qna_detail", post_id=question.post_id)
 
-    answer = get_object_or_404(
-        Post.objects.visible(),
-        post_id=answer_id,
-        parent=question,
-    )
+    answer = get_object_or_404(Post.objects.visible(), post_id=answer_id, parent=question)
 
     if question.accepted_answer_id is not None:
         messages.error(request, "이미 채택된 답변이 있습니다.")
@@ -276,4 +209,85 @@ def qna_accept_answer(request, post_id, answer_id):
     question.save(update_fields=["accepted_answer"])
 
     messages.success(request, "답변을 채택했습니다.")
+    return redirect("qna_detail", post_id=question.post_id)
+
+
+@login_required
+def qna_edit_answer(request, post_id, answer_id):
+    question = get_object_or_404(
+        Post.objects.visible().roots(),
+        post_id=post_id,
+        board__board_name=QNA_BOARD_NAME,
+    )
+
+    answer = get_object_or_404(
+        Post.objects.visible(),
+        post_id=answer_id,
+        parent=question,
+        writer=request.user,
+    )
+
+    if request.method == "POST":
+        title = request.POST.get("title", "").strip()
+        content = request.POST.get("content", "").strip()
+
+        if not title or not content:
+            messages.error(request, "제목과 내용을 모두 입력해주세요.")
+            return render(request, "qna/answer_edit.html", {
+                "question": question,
+                "answer": answer,
+                "title": title,
+                "content": content,
+                "attachments": answer.attachments.all(),
+                "nav_current": "qna",
+            })
+
+        answer.title = title
+        answer.content = content
+        answer.save(update_fields=["title", "content"])
+
+        delete_files = request.POST.getlist("delete_files")
+        if delete_files:
+            Attachment.objects.filter(post=answer, attachment_id__in=delete_files).delete()
+
+        for f in request.FILES.getlist("files"):
+            Attachment.objects.create(post=answer, origin_name=f.name, stored_path=f, file_size=f.size)
+
+        messages.success(request, "답변을 수정했습니다.")
+        return redirect("qna_detail", post_id=question.post_id)
+
+    return render(request, "qna/answer_edit.html", {
+        "question": question,
+        "answer": answer,
+        "title": answer.title,
+        "content": answer.content,
+        "attachments": answer.attachments.all(),
+        "nav_current": "qna",
+    })
+
+
+@login_required
+@require_POST
+def qna_delete_answer(request, post_id, answer_id):
+    question = get_object_or_404(
+        Post.objects.visible().roots(),
+        post_id=post_id,
+        board__board_name=QNA_BOARD_NAME,
+    )
+
+    answer = get_object_or_404(
+        Post.objects.visible(),
+        post_id=answer_id,
+        parent=question,
+        writer=request.user,
+    )
+
+    if question.accepted_answer_id == answer.post_id:
+        messages.error(request, "채택된 답변은 삭제할 수 없습니다.")
+        return redirect("qna_detail", post_id=question.post_id)
+
+    answer.is_deleted = True
+    answer.save(update_fields=["is_deleted"])
+
+    messages.success(request, "답변을 삭제했습니다.")
     return redirect("qna_detail", post_id=question.post_id)

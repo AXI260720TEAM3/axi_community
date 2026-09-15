@@ -5,7 +5,6 @@
 {% block content %}
 
 <div class="notification-wrap">
-
   <div class="notification-card">
 
     <div class="notification-head">
@@ -14,63 +13,47 @@
         <p>새로운 활동을 확인하세요.</p>
       </div>
 
-      {% if notifications %}
+      {% if page.object_list %}
         <form method="post" action="{% url 'notification_read_all' %}">
           {% csrf_token %}
-          <button class="btn quiet" type="submit">
-            전체 읽음
-          </button>
+          <button class="btn quiet" type="submit">전체 읽음</button>
         </form>
       {% endif %}
     </div>
 
     <div class="notification-list">
 
-      {% if notifications %}
+      {% if page.object_list %}
 
-        {% for notification in notifications %}
-
+        {% for notification in page %}
           <div class="notification-item {% if not notification.read_at %}unread{% endif %}">
 
             <div class="notification-info">
 
               <div class="notification-meta">
-
-                <span class="tag">
-                  {{ notification.get_kind_display }}
-                </span>
+                <span class="tag">{{ notification.get_kind_display }}</span>
 
                 {% if not notification.read_at %}
                   <span class="notification-new">NEW</span>
                 {% endif %}
 
-                <time>
-                  {{ notification.created_at|date:"Y.m.d H:i" }}
-                </time>
+                <time>{{ notification.created_at|date:"Y.m.d H:i" }}</time>
 
-                <form
-                  method="post"
-                  action="{% url 'notification_delete' notification.notification_id %}"
-                  class="notification-delete-form"
-                >
+                <form method="post"
+                      action="{% url 'notification_delete' notification.notification_id %}"
+                      class="notification-delete-form">
                   {% csrf_token %}
-                  <button
-                    type="submit"
-                    class="notification-delete"
-                    aria-label="알림 삭제"
-                    title="삭제"
-                    onclick="return confirm('알림을 삭제하시겠습니까?');"
-                  >
-                    ×
-                  </button>
-                </form>
 
+                  <button type="submit"
+                          class="notification-delete"
+                          aria-label="알림 삭제"
+                          title="삭제"
+                          onclick="return confirm('알림을 삭제하시겠습니까?');">×</button>
+                </form>
               </div>
 
-              <form
-                method="post"
-                action="{% url 'notification_read' notification.notification_id %}"
-              >
+              <form method="post"
+                    action="{% url 'notification_read' notification.notification_id %}">
                 {% csrf_token %}
 
                 <button type="submit" class="notification-link">
@@ -79,144 +62,123 @@
               </form>
 
             </div>
-
           </div>
-
         {% endfor %}
 
       {% else %}
-
-        <div class="notification-empty">
-          새로운 알림이 없습니다.
-        </div>
-
+        <div class="notification-empty">새로운 알림이 없습니다.</div>
       {% endif %}
 
     </div>
-
   </div>
 
+  {% if page.paginator.num_pages > 1 %}
+    <nav class="notification-pagination" aria-label="알림 페이지">
+
+      {% if page.has_previous %}
+        <a href="?page={{ page.previous_page_number }}">이전</a>
+      {% else %}
+        <span class="disabled">이전</span>
+      {% endif %}
+
+      {% for num in page.paginator.page_range %}
+        {% if num == page.number %}
+          <span class="current">{{ num }}</span>
+        {% else %}
+          <a href="?page={{ num }}">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if page.has_next %}
+        <a href="?page={{ page.next_page_number }}">다음</a>
+      {% else %}
+        <span class="disabled">다음</span>
+      {% endif %}
+
+    </nav>
+  {% endif %}
 </div>
 
-
 <style>
+  .notification-wrap { max-width:980px; }
 
-.notification-wrap {
-  max-width: 980px;
-}
+  .notification-card {
+    background:#fff; border:1px solid #d9dfdc;
+    border-radius:10px; overflow:hidden;
+  }
 
-.notification-card {
-  background: #fff;
-  border: 1px solid #d9dfdc;
-  border-radius: 10px;
-  overflow: hidden;
-}
+  .notification-head {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 24px; border-bottom:1px solid #e2e6e4;
+  }
 
-.notification-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24px 28px;
-  border-bottom: 1px solid #e2e6e4;
-}
+  .notification-head h1 { margin:0 0 3px; font-size:20px; }
+  .notification-head p { margin:0; font-size:13px; color:#777; }
+  .notification-list { padding:0 24px; }
 
-.notification-head h1 {
-  margin: 0 0 6px;
-  font-size: 22px;
-}
+  .notification-item {
+    padding:11px 0;
+    border-bottom:1px solid #e5e8e6;
+  }
 
-.notification-head p {
-  margin: 0;
-  font-size: 14px;
-  color: #777;
-}
+  .notification-item:last-child { border-bottom:0; }
 
-.notification-list {
-  padding: 0 28px;
-}
+  .notification-item.unread {
+    background:#fafbf7; margin:0 -24px;
+    padding-left:24px; padding-right:24px;
+  }
 
-.notification-item {
-  padding: 22px 0;
-  border-bottom: 1px solid #e5e8e6;
-}
+  .notification-meta {
+    display:flex; align-items:center;
+    gap:7px; margin-bottom:4px;
+  }
 
-.notification-item:last-child {
-  border-bottom: 0;
-}
+  .notification-meta time { margin-left:auto; font-size:12px; color:#777; }
+  .notification-new { font-size:11px; font-weight:700; color:#2f6d5d; }
+  .notification-delete-form { margin:0; padding:0; }
 
-.notification-item.unread {
-  background: #fafbf7;
-  margin: 0 -28px;
-  padding-left: 28px;
-  padding-right: 28px;
-}
+  .notification-delete {
+    width:18px; height:18px; padding:0; border:0;
+    background:transparent; color:#999; font-size:15px;
+    line-height:16px; cursor:pointer;
+  }
 
-.notification-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
+  .notification-delete:hover { color:#444; }
 
-.notification-meta time {
-  margin-left: auto;
-  font-size: 13px;
-  color: #777;
-}
+  .notification-link {
+    display:block; width:100%; border:0; background:transparent;
+    padding:0; text-align:left; font:inherit; font-size:14px;
+    font-weight:600; color:#222; cursor:pointer;
+  }
 
-.notification-new {
-  font-size: 11px;
-  font-weight: 700;
-  color: #2f6d5d;
-}
+  .notification-link:hover { color:#2f6d5d; text-decoration:underline; }
+  .notification-empty { padding:50px 20px; text-align:center; color:#888; }
 
-.notification-delete-form {
-  margin: 0;
-  padding: 0;
-}
+  .notification-pagination {
+    display:flex; justify-content:center; align-items:center;
+    gap:6px; margin-top:14px;
+  }
 
-.notification-delete {
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #999;
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 18px;
-  cursor: pointer;
-}
+  .notification-pagination a,
+  .notification-pagination span {
+    min-width:32px; height:32px; display:inline-flex;
+    align-items:center; justify-content:center; box-sizing:border-box;
+    padding:0 7px; border:1px solid #d9dfdc;
+    border-radius:6px; background:#fff; color:#555;
+    font-size:13px; text-decoration:none;
+  }
 
-.notification-delete:hover {
-  color: #444;
-}
+  .notification-pagination a:hover { background:#f4f6f5; }
 
-.notification-link {
-  display: block;
-  width: 100%;
-  border: 0;
-  background: transparent;
-  padding: 0;
-  text-align: left;
-  font: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  color: #222;
-  cursor: pointer;
-}
+  .notification-pagination .current {
+    background:#173d35; border-color:#173d35;
+    color:#fff; font-weight:700;
+  }
 
-.notification-link:hover {
-  color: #2f6d5d;
-  text-decoration: underline;
-}
-
-.notification-empty {
-  padding: 70px 20px;
-  text-align: center;
-  color: #888;
-}
-
+  .notification-pagination .disabled {
+    color:#bbb; background:#f7f8f7;
+    cursor:default;
+  }
 </style>
 
 {% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}팀원 모집 · 기회를 IT-DA{% endblock %}
+
+{% block content %}
+<div class="head">
+  <div>
+    <div class="crumb">커뮤니티</div>
+    <h1>프로젝트 팀원 모집</h1>
+  </div>
+  <div>
+    {% if user.is_authenticated %}
+      <a class="btn" href="{% url 'recruit_create' %}">모집글 작성</a>
+    {% endif %}
+  </div>
+</div>
+
+<form class="filters" method="get">
+  <div class="search" style="width: 100%;">
+    <input name="q" value="{{ request.GET.q }}" placeholder="모집글 제목이나 내용으로 검색" aria-label="팀원 모집 검색">
+    <button type="submit">검색</button>
+  </div>
+</form>
+
+<table class="list">
+  <thead>
+    <tr>
+      <th style="width: 70px; text-align: center;">상태</th>
+      <th style="width: 90px; text-align: center;">분야</th>
+      <th>제목</th>
+      <th style="width: 90px; text-align: center;">모집 인원</th>
+      <th class="col-writer">작성자</th>
+      <th class="col-date">마감일</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in recruits %}
+      <tr>
+        <td style="text-align: center; white-space: nowrap;">
+          {% if r.is_closed %}
+            <span class="note" style="color: var(--muted, #888); font-size: 0.85rem; padding: 2px 6px;">마감</span>
+          {% else %}
+            <span style="color: var(--primary, #007bff); font-weight: bold; font-size: 0.85rem;">모집중</span>
+          {% endif %}
+        </td>
+        <td style="text-align: center; white-space: nowrap;">
+          <span class="meta-inline" style="font-weight: 600;">{{ r.field }}</span>
+        </td>
+        <td class="subject">
+          <a href="{% url 'recruit_detail' r.recruit_id %}">{{ r.title }}</a>
+        </td>
+        <td style="text-align: center; white-space: nowrap;">
+          <b>{{ r.approved_count }}</b> / {{ r.headcount }} 명
+        </td>
+        <td class="col-writer">
+          {% if user.is_authenticated and r.writer_id != user.pk %}
+            <a class="message-open" href="{% url 'message_box' %}?receiver={{ r.writer.username|urlencode }}"
+               data-receiver="{{ r.writer.username }}" data-name="{{ r.writer.member_name }}">{{ r.writer.member_name }}</a>
+            {% include "_usertype.html" with member=r.writer %}
+          {% else %}
+            {{ r.writer.member_name }} {% include "_usertype.html" with member=r.writer %}
+          {% endif %}
+        </td>
+        <td class="col-date">{{ r.deadline|date:"m-d" }}</td>
+      </tr>
+    {% empty %}
+      <tr>
+        <td colspan="6" style="text-align:center; padding:48px 0; color:var(--muted)">
+          {% if request.GET.q %}
+            '{{ request.GET.q }}' 에 해당하는 모집글이 없습니다.
+          {% else %}
+            등록된 팀원 모집글이 없습니다. 첫 모집글을 작성해 보세요!
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

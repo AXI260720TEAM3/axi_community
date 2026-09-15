@@ -13,6 +13,8 @@ URL 설계 — 팀장이 관리합니다.
 
 from django.urls import path
 
+from .views import account, board, comment, message, mypage, post, qna
+from .views import recruit
 from .views import account, board, comment, message, mypage, post, qna, notification
 
 urlpatterns = [
@@ -41,6 +43,15 @@ urlpatterns = [
     path("mypage/edit/", mypage.profile_edit, name="profile_edit"),
     path('mypage/my-posts/', mypage.my_posts_ajax, name='my_posts_ajax'),
     path('mypage/account_delete/', mypage.account_delete, name="account_delete"),
+
+
+    # ---------------------------------------------------------------- [B] 프로젝트 팀원 모집
+    path('recruit/', recruit.recruit_list, name='recruit_list'),
+    path('recruit/create/', recruit.recruit_create, name='recruit_create'),
+    path('recruit/<int:recruit_id>/', recruit.recruit_detail, name='recruit_detail'),
+    path('recruit/<int:recruit_id>/apply/', recruit.recruit_apply, name='recruit_apply'),
+    path('recruit/<int:recruit_id>/close/', recruit.recruit_close, name='recruit_close'),
+    path('recruit/application/<int:app_id>/<str:status>/', recruit.recruit_application_decide, name='recruit_app_decide'),
 
     # ---------------------------------------------------------------- [C] 댓글
     path("posts/<int:post_id>/comments/", comment.comment_create, name="comment_create"),

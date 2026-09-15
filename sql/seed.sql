@@ -26,13 +26,13 @@ INSERT INTO `user_type` (`type_id`, `type_name`) VALUES
 
 -- ---------- 게시판
 -- Q&A 는 댓글을 달 수 없으므로 allow_comment = FALSE
--- 익명게시판은 글쓴이를 화면에서 가립니다(is_anonymous). 댓글 작성자는 그대로 보입니다.
+-- '멘토의 취업비밀' 은 글쓴이를 화면에서 가립니다(is_anonymous). 댓글 작성자는 그대로 보입니다.
 INSERT INTO `board` (`board_id`, `board_name`, `allow_comment`, `is_anonymous`) VALUES
 	(1, '공지사항',   TRUE,  FALSE),
 	(2, '자유게시판', TRUE,  FALSE),
 	(3, 'Q&A',        FALSE, FALSE),
 	(4, '취업정보',   TRUE,  FALSE),
-	(5, '익명게시판', TRUE,  TRUE);
+	(5, '멘토의 취업비밀', TRUE,  TRUE);
 
 -- ---------- 작성 권한
 -- 여기 있는 조합만 허용됩니다. 없는 조합은 자동으로 금지입니다.
@@ -49,7 +49,7 @@ INSERT INTO `board_permission` (`board_id`, `type_id`, `permission_type`) VALUES
 	(4, 2, '일반'),   -- 취업정보   : 강사
 	(4, 3, '일반'),   --              멘토
 	(4, 4, '일반'),   --              직원
-	(5, 3, '일반');   -- 익명게시판 : 멘토(수료생)만 글쓰기, 댓글은 누구나
+	(5, 3, '일반');   -- 멘토의 취업비밀 : 멘토(수료생)만 글쓰기, 댓글은 누구나
 
 -- ---------- 회원
 -- 비밀번호는 모두 test1234 를 SHA-256 으로 해시한 값입니다.  SHA2()는 MariaDB(또는 MySQL) DBMS에 내장되어 있는 SQL 함수

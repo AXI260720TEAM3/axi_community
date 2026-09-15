@@ -44,7 +44,14 @@
       {% endif %}
     {% endfor %}
 
+
     <h4>내 활동</h4>
+   
+    <a class="navlink" href="{% url 'notification_list' %}"
+   {% if nav_current == 'notification' %}aria-current="true"{% endif %}>
+  알림{% if notification_unread_count %}<span class="cnt">{{ notification_unread_count }}</span>{% endif %}
+  </a>
+
     <a class="navlink" href="{% url 'message_box' %}"
        {% if nav_current == 'message' %}aria-current="true"{% endif %}>쪽지함{% if unread_count %}<span class="cnt">{{ unread_count }}</span>{% endif %}</a>
     <a class="navlink" href="{% url 'mypage' %}"

@@ -158,6 +158,17 @@ def message_detail(request, message_id):
             )
 
         if action == "cancel":
+            message_link = reverse(
+                "message_detail",
+                args=[message.message_id],
+            )
+
+            Notification.objects.filter(
+                receiver=message.receiver,
+                kind=Notification.Kind.MESSAGE,
+                link=message_link,
+            ).delete()
+
             message.delete()
 
             messages.success(

@@ -20,7 +20,7 @@
    사용법
        {% extends "base_gate.html" %}
        {% block card_class %}wide{% endblock %}          카드를 넓게 (회원가입·계정찾기)
-       {% block wordmark %}회원가입<span>부제</span>{% endblock %}
+       {% block wordmark %}회원가입<span>부제</span>{% endblock %}   제목(홈 링크) 문구 교체
        {% block content %} ... {% endblock %}
 
    오류 안내는 뷰에서 messages.error(request, "...") 로 넘기면
@@ -29,7 +29,8 @@
 
 <div class="gate">
   <div class="gate-card {% block card_class %}{% endblock %}">
-    <div class="wordmark">{% block wordmark %}기회를 IT-DA<span>국비지원 교육과정 정보공유 커뮤니티</span>{% endblock %}</div>
+    {% comment %} 제목을 누르면 메인으로 갑니다. 로그인 전에도 게시판은 읽을 수 있습니다. {% endcomment %}
+    <a class="wordmark" href="{% url 'home' %}" aria-label="기회를 IT-DA 홈으로">{% block wordmark %}기회를 IT-DA<span>국비지원 교육과정 정보공유 커뮤니티</span>{% endblock %}</a>
 
     {% if messages %}
       {% for m in messages %}<div class="gate-msg">{{ m }}</div>{% endfor %}

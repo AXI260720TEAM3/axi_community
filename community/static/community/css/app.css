@@ -26,7 +26,7 @@ button,input,select,textarea{font:inherit;color:inherit}
    align-self:start 가 없으면 grid 가 본문 높이만큼 늘여버려서
    맨 아래 whoami(이름·로그아웃)가 스크롤을 내려야 보입니다. */
 .rail{background:var(--ink);color:#CBD6D1;padding:22px 0 24px;display:flex;flex-direction:column;position:sticky;top:0;align-self:start;height:100vh;overflow:hidden}
-.wordmark{font-family:var(--serif);font-size:23px;color:#fff;padding:0 22px 20px;line-height:1.25}
+.wordmark{display:block;font-family:var(--serif);font-size:23px;color:#fff;padding:0 22px 20px;line-height:1.25}
 .wordmark span{display:block;font-family:var(--sans);font-size:11.5px;font-weight:500;color:#7E918B;letter-spacing:.02em;margin-top:5px}
 .rail nav{padding:0 12px;flex:1;min-height:0;overflow-y:auto}
 .rail h4{font-size:11.5px;font-weight:600;color:#728480;padding:16px 10px 7px}
@@ -179,6 +179,7 @@ textarea:focus{outline:none;border-color:var(--chalk)}
 .gate-card.wide{max-width:520px}
 .gate .wordmark{color:var(--ink);padding:0 0 22px}
 .gate .wordmark span{color:var(--muted)}
+.gate .wordmark:hover{color:var(--chalk)}
 .gate .btn{width:100%;padding:11px;margin-top:4px}
 .gate-links{display:flex;justify-content:center;gap:14px;margin-top:16px;font-size:13px;color:var(--muted);flex-wrap:wrap}
 .gate-links a:hover{color:var(--chalk);text-decoration:underline;text-underline-offset:3px}

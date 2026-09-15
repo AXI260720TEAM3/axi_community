@@ -13,17 +13,27 @@ settings.py 의 TEMPLATES > OPTIONS > context_processors 에 등록되어 있습
     그 외    -> 'qna' / 'message' / 'mypage'
 """
 
-from .models import Board, Message
+from .models import Board, Message, Notification
 
 
 def sidebar(request):
     unread = 0
+    notification_unread_count = 0
+
     if request.user.is_authenticated:
         unread = Message.objects.filter(
-            receiver=request.user, read_at__isnull=True, receiver_deleted=False
+            receiver=request.user,
+            read_at__isnull=True,
+            receiver_deleted=False,
+        ).count()
+
+        notification_unread_count = Notification.objects.filter(
+            receiver=request.user,
+            read_at__isnull=True,
         ).count()
 
     return {
         "nav_boards": Board.objects.all().order_by("board_id"),
         "unread_count": unread,
+        "notification_unread_count": notification_unread_count,
     }

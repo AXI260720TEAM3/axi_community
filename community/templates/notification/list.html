@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}알림 · 기회를 IT-DA{% endblock %}
+
+{% block content %}
+
+<div class="notification-wrap">
+
+  <div class="notification-card">
+
+    <div class="notification-head">
+      <div>
+        <h1>알림</h1>
+        <p>새로운 활동을 확인하세요.</p>
+      </div>
+
+      {% if notifications %}
+        <form method="post" action="{% url 'notification_read_all' %}">
+          {% csrf_token %}
+          <button class="btn quiet" type="submit">
+            전체 읽음
+          </button>
+        </form>
+      {% endif %}
+    </div>
+
+    <div class="notification-list">
+
+      {% if notifications %}
+
+        {% for notification in notifications %}
+
+          <div class="notification-item {% if not notification.read_at %}unread{% endif %}">
+
+            <div class="notification-info">
+
+              <div class="notification-meta">
+                <span class="tag">
+                  {{ notification.get_kind_display }}
+                </span>
+
+                {% if not notification.read_at %}
+                  <span class="notification-new">NEW</span>
+                {% endif %}
+
+                <time>
+                  {{ notification.created_at|date:"Y.m.d H:i" }}
+                </time>
+              </div>
+
+              <form
+                method="post"
+                action="{% url 'notification_read' notification.notification_id %}"
+              >
+                {% csrf_token %}
+
+                <button type="submit" class="notification-link">
+                  {{ notification.message }}
+                </button>
+              </form>
+
+            </div>
+
+          </div>
+
+        {% endfor %}
+
+      {% else %}
+
+        <div class="notification-empty">
+          새로운 알림이 없습니다.
+        </div>
+
+      {% endif %}
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<style>
+
+.notification-wrap {
+  max-width: 980px;
+}
+
+.notification-card {
+  background: #fff;
+  border: 1px solid #d9dfdc;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.notification-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 28px;
+  border-bottom: 1px solid #e2e6e4;
+}
+
+.notification-head h1 {
+  margin: 0 0 6px;
+  font-size: 22px;
+}
+
+.notification-head p {
+  margin: 0;
+  font-size: 14px;
+  color: #777;
+}
+
+.notification-list {
+  padding: 0 28px;
+}
+
+.notification-item {
+  padding: 22px 0;
+  border-bottom: 1px solid #e5e8e6;
+}
+
+.notification-item:last-child {
+  border-bottom: 0;
+}
+
+.notification-item.unread {
+  background: #fafbf7;
+  margin: 0 -28px;
+  padding-left: 28px;
+  padding-right: 28px;
+}
+
+.notification-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.notification-meta time {
+  margin-left: auto;
+  font-size: 13px;
+  color: #777;
+}
+
+.notification-new {
+  font-size: 11px;
+  font-weight: 700;
+  color: #2f6d5d;
+}
+
+.notification-link {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: #222;
+  cursor: pointer;
+}
+
+.notification-link:hover {
+  color: #2f6d5d;
+  text-decoration: underline;
+}
+
+.notification-empty {
+  padding: 70px 20px;
+  text-align: center;
+  color: #888;
+}
+
+</style>
+
+{% endblock %}

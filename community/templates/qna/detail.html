@@ -103,7 +103,7 @@
         {% else %}
           <span>{{ question.writer.member_name }}</span>
         {% endif %}
-        · {{ question.writer.user_type.type_name }}
+        {% include "_usertype.html" with member=question.writer %}
       </span>
 
       <span>{{ question.created_at|date:"Y년 n월 j일 H:i" }}</span>
@@ -197,7 +197,7 @@
           <span><b>{{ a.writer.member_name }}</b></span>
         {% endif %}
 
-        <span class="tag">{{ a.writer.user_type.type_name }}</span>
+        {% include "_usertype.html" with member=a.writer %}
         <time>{{ a.created_at|date:"n월 j일 H:i" }}</time>
       </div>
 

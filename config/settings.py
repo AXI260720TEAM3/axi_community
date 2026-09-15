@@ -151,7 +151,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # @login_required 가 걸린 화면에 비로그인 상태로 들어오면 여기로 보냅니다.
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
-LOGOUT_REDIRECT_URL = 'login'
+LOGOUT_REDIRECT_URL = 'home'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

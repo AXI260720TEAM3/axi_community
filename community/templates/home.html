@@ -11,7 +11,7 @@
        total_posts / total_members   요약 숫자
        unread_count   안 읽은 쪽지 (context_processors 가 자동으로 넣어줍니다)
 
-   익명게시판 글은 작성자를 반드시 '익명'으로 표시합니다.
+   익명 게시판('멘토의 취업비밀') 글은 작성자를 반드시 '익명'으로 표시합니다.
    ---------------------------------------------------------------- {% endcomment %}
 
 {% block content %}
@@ -47,7 +47,7 @@
               <time>{{ p.created_at|date:"m-d" }}</time>
             </div>
             <p>
-              {% comment %} 익명게시판은 작성자를 가립니다 {% endcomment %}
+              {% comment %} 익명 게시판은 작성자를 가립니다 {% endcomment %}
               {% if s.board.is_anonymous %}익명{% else %}{{ p.writer.member_name }}{% endif %}
             </p>
           </div>

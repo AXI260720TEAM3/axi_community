@@ -153,7 +153,7 @@ class Member(AbstractUser):
 # ================================================================ 게시판
 
 class Board(models.Model):
-    """공지사항 / 자유게시판 / Q&A / 취업정보 / 익명게시판"""
+    """공지사항 / 자유게시판 / Q&A / 취업정보 / 멘토의 취업비밀"""
 
     board_id = models.AutoField(primary_key=True)
     board_name = models.CharField("게시판명", max_length=50, unique=True)

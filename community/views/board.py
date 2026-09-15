@@ -33,7 +33,7 @@ def home(request):
     # 템플릿에서 그대로 반복할 수 있게 블록 목록으로 만들어 둡니다
     sections = [
         {"title": name, "board": boards.get(name), "posts": recent(name)}
-        for name in ("공지사항", "자유게시판", "취업정보", "익명게시판")
+        for name in ("공지사항", "자유게시판", "취업정보", "멘토의 취업비밀")
     ]
 
     qna_board = boards.get("Q&A")
@@ -81,7 +81,7 @@ def board_list(request, board_id):
     keyword = request.GET.get("q", "").strip()
     search_type = request.GET.get("type","all")
 
-    # 익명게시판에서 작성자 검색을 허용하면 이름으로 글쓴이를 특정할 수 있어 익명성이 깨집니다
+    # 익명 게시판에서 작성자 검색을 허용하면 이름으로 글쓴이를 특정할 수 있어 익명성이 깨집니다
     if board.is_anonymous or search_type not in ("all", "writer"):
         search_type = "all"
 

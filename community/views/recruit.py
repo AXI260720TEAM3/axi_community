@@ -112,3 +112,51 @@ def recruit_close(request, recruit_id):
     recruit.is_closed = True
     recruit.save()
     return redirect('recruit_detail', recruit_id=recruit.recruit_id)
+
+@login_required
+def recruit_cancel(request, recruit_id):
+    """팀원 지원 취소 처리"""
+    if request.method == 'POST':
+        recruit = get_object_or_404(Recruit, pk=recruit_id)
+        
+        # 본인의 지원 내역 조회
+        application = RecruitApplication.objects.filter(
+            recruit=recruit, 
+            applicant=request.user
+        ).first()
+
+        if application:
+            # 이미 승인/거절 처리된 지원건은 취소할 수 없도록 방어
+            if application.status != '대기':
+                messages.error(request, "이미 작성자가 처리를 완료하여 지원을 취소할 수 없습니다.")
+            else:
+                application.delete()
+                messages.success(request, "지원이 성공적으로 취소되었습니다.")
+        else:
+            messages.error(request, "지원 내역을 찾을 수 없습니다.")
+
+    return redirect('recruit_detail', recruit_id=recruit_id)
+
+@login_required
+def recruit_cancel(request, recruit_id):
+    """팀원 지원 취소 처리"""
+    if request.method == 'POST':
+        recruit = get_object_or_404(Recruit, pk=recruit_id)
+        
+        # 본인의 지원 내역 조회
+        application = RecruitApplication.objects.filter(
+            recruit=recruit, 
+            applicant=request.user
+        ).first()
+
+        if application:
+            # 이미 승인/거절 처리된 지원건은 취소할 수 없도록 방어
+            if application.status != '대기':
+                messages.error(request, "이미 작성자가 처리를 완료하여 지원을 취소할 수 없습니다.")
+            else:
+                application.delete()
+                messages.success(request, "지원이 성공적으로 취소되었습니다.")
+        else:
+            messages.error(request, "지원 내역을 찾을 수 없습니다.")
+
+    return redirect('recruit_detail', recruit_id=recruit_id)

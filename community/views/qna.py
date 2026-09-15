@@ -5,8 +5,9 @@ from django.db.models import Count, Prefetch, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from ..models import Attachment, Board, BoardPermission, Post
+from ..models import Attachment, Board, BoardPermission, Post, Notification
 from ..permissions import can_write
+from django.urls import reverse
 
 
 PAGE_SIZE = 10
@@ -290,6 +291,17 @@ def qna_answer(request, post_id):
                 title=title,
                 content=content,
             )
+            
+        Notification.notify(
+    receiver=question.writer,
+    kind=Notification.Kind.ANSWER,
+    message=f"{request.user.member_name}님이 내 Q&A에 답변을 남겼습니다.",
+    link=reverse(
+        "qna_detail",
+        args=[question.post_id],
+    ),
+    actor=request.user,
+)
 
         return redirect(
             "qna_detail",

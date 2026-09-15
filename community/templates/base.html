@@ -13,26 +13,12 @@
 </head>
 <body>
 
-{% comment %} ================================================================
-   로그인 후 화면의 공통 레이아웃입니다.
-   사이드바(rail)는 여기서만 관리합니다. 수정이 필요하면 팀장에게 요청하세요.
-
-   사용법
-       {% extends "base.html" %}
-       {% block page_title %}자유게시판{% endblock %}
-       {% block content %} ... {% endblock %}
-
-   사이드바에 필요한 값(nav_boards, unread_count, request.user)은
-   community/context_processors.py 가 모든 페이지에 자동으로 넣어줍니다.
-   각 뷰에서 따로 넘길 필요가 없습니다.
-   ================================================================ {% endcomment %}
-
 <div class="shell">
 
 <aside class="rail">
   <a class="wordmark" href="{% url 'home' %}" aria-label="기회를 IT-DA 홈으로">기회를 IT-DA<span>국비지원 교육과정 정보공유</span></a>
 
-<nav>
+  <nav>
     <h4>게시판</h4>
     {% for b in nav_boards %}
       {% if b.board_name == 'Q&A' %}
@@ -44,11 +30,14 @@
       {% endif %}
     {% endfor %}
 
-    <!-- ⬇️ 여기에 팀원 모집 메뉴를 추가하세요 ⬇️ -->
     <a class="navlink" href="{% url 'recruit_list' %}"
        {% if nav_current == 'recruit' %}aria-current="true"{% endif %}>프로젝트 팀원 모집</a>
 
     <h4>내 활동</h4>
+    <a class="navlink" href="{% url 'notification_list' %}"
+       {% if nav_current == 'notification' %}aria-current="true"{% endif %}>
+      알림{% if notification_unread_count %}<span class="cnt">{{ notification_unread_count }}</span>{% endif %}
+    </a>
     <a class="navlink" href="{% url 'message_box' %}"
        {% if nav_current == 'message' %}aria-current="true"{% endif %}>쪽지함{% if unread_count %}<span class="cnt">{{ unread_count }}</span>{% endif %}</a>
     <a class="navlink" href="{% url 'mypage' %}"
@@ -88,17 +77,6 @@
 
 {% block extra_js %}{% endblock %}
 
-{% comment %} ----------------------------------------------------------------
-   팝업 알림. extra_tags="alert" 로 보낸 메시지만 여기서 모달로 뜹니다.
-
-       messages.error(request, "문구", extra_tags="alert")
-
-   브라우저의 alert() 를 쓰지 않습니다.
-   alert() 는 Chrome 설정이나 확장 프로그램에 막혀서 조용히 안 뜨는 일이 있습니다.
-   이건 그냥 <div> 라서 어떤 환경에서도 똑같이 보입니다.
-
-   태그를 안 붙인 메시지는 위쪽 본문에 인라인(.note)으로 나옵니다. 그건 그대로입니다.
-   ---------------------------------------------------------------- {% endcomment %}
 {% for m in messages %}
   {% if 'alert' in m.tags %}
     <div class="modal" id="modal-{{ forloop.counter }}">
@@ -114,7 +92,6 @@
   {% endif %}
 {% endfor %}
 
-{% comment %} Esc 로도 닫히게. 없어도 확인 버튼으로 닫힙니다. {% endcomment %}
 <script>
 document.addEventListener("keydown", function (e) {
   if (e.key === "Escape") {

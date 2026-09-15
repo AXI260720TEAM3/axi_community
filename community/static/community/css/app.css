@@ -22,10 +22,13 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 /* ---------- 뼈대 ---------- */
 .shell{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
-.rail{background:var(--ink);color:#CBD6D1;padding:22px 0 40px;display:flex;flex-direction:column}
+/* 사이드바는 본문 길이와 상관없이 화면 높이에 붙어 있습니다.
+   align-self:start 가 없으면 grid 가 본문 높이만큼 늘여버려서
+   맨 아래 whoami(이름·로그아웃)가 스크롤을 내려야 보입니다. */
+.rail{background:var(--ink);color:#CBD6D1;padding:22px 0 24px;display:flex;flex-direction:column;position:sticky;top:0;align-self:start;height:100vh;overflow:hidden}
 .wordmark{font-family:var(--serif);font-size:23px;color:#fff;padding:0 22px 20px;line-height:1.25}
 .wordmark span{display:block;font-family:var(--sans);font-size:11.5px;font-weight:500;color:#7E918B;letter-spacing:.02em;margin-top:5px}
-.rail nav{padding:0 12px}
+.rail nav{padding:0 12px;flex:1;min-height:0;overflow-y:auto}
 .rail h4{font-size:11.5px;font-weight:600;color:#728480;padding:16px 10px 7px}
 .navlink{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:5px;font-size:14px;color:#CBD6D1;cursor:pointer;width:100%;background:none;border:0;text-align:left}
 .navlink:hover{background:#22302C;color:#fff}
@@ -235,8 +238,10 @@ textarea:focus{outline:none;border-color:var(--chalk)}
 
 @media (max-width:860px){
   .shell{grid-template-columns:1fr}
-  .rail{flex-direction:row;flex-wrap:wrap;align-items:center;padding:14px}
-  .rail nav{display:flex;flex-wrap:wrap;gap:4px;padding:0;width:100%;margin-top:10px}
+  .rail{flex-direction:row;flex-wrap:wrap;align-items:center;padding:14px;
+        position:static;height:auto;overflow:visible}
+  .rail nav{display:flex;flex-wrap:wrap;gap:4px;padding:0;width:100%;margin-top:10px;
+            flex:none;overflow:visible}
   .rail h4{display:none}
   .navlink{width:auto}
   .navlink .cnt{margin-left:6px}

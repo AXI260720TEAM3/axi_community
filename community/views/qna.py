@@ -441,6 +441,23 @@ def qna_accept_answer(request, post_id, answer_id):
         update_fields=["accepted_answer"]
     )
 
+    # ---------------------------------------------------------
+    # [추가] 답변 채택 알림 발송
+    # ---------------------------------------------------------
+    if answer.writer != request.user:
+        Notification.notify(
+            receiver=answer.writer,
+            kind=Notification.Kind.ANSWER,  # 또는 모델에 상수가 정의되어 있다면 적절한 종류로 지정
+            message=(
+                f"작성하신 답변이 '{question.title}' 질문에서 채택되었습니다."
+            ),
+            link=reverse(
+                "qna_detail",
+                args=[question.post_id],
+            ),
+            actor=request.user,
+        )
+
     messages.success(
         request,
         "답변을 채택했습니다.",

@@ -56,6 +56,11 @@ def recruit_create(request):
 def recruit_apply(request, recruit_id):
     recruit = get_object_or_404(Recruit, pk=recruit_id, is_deleted=False)
     
+    # 화면에서는 작성자에게 지원 폼을 감추지만, 주소로 직접 들어오면 그대로 통과합니다.
+    if request.user == recruit.writer:
+        messages.error(request, "내가 올린 모집에는 지원할 수 없습니다.")
+        return redirect('recruit_detail', recruit_id=recruit_id)
+
     if recruit.is_closed or recruit.deadline < timezone.now().date():
         messages.error(request, "이미 마감된 모집입니다.")
         return redirect('recruit_detail', recruit_id=recruit_id)
@@ -102,6 +107,19 @@ def recruit_application_decide(request, app_id, status):
     }
 
     target_status = valid_statuses.get(status)
+
+    # 모집 인원보다 많이 승인되지 않게 막습니다.
+    # 이미 승인된 지원을 다시 승인하는 경우는 인원이 늘지 않으므로 통과시킵니다.
+    if (
+        target_status == RecruitApplication.Status.APPROVED
+        and application.status != RecruitApplication.Status.APPROVED
+        and application.recruit.is_full
+    ):
+        messages.error(
+            request,
+            f"모집 인원({application.recruit.headcount}명)을 이미 다 채웠습니다.",
+        )
+        return redirect('recruit_detail', recruit_id=application.recruit.recruit_id)
 
     if target_status:
         application.status = target_status

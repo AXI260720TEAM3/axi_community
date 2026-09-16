@@ -578,6 +578,11 @@ class Recruit(models.Model):
         """승인된 지원자 수"""
         return self.applications.filter(status=RecruitApplication.Status.APPROVED).count()
 
+    @property
+    def is_full(self):
+        """승인 인원이 모집 인원에 찼는지"""
+        return self.approved_count >= self.headcount
+
 
 class RecruitApplication(models.Model):
     """모집 카드에 넣은 지원. 같은 모집에 두 번 지원할 수 없습니다."""

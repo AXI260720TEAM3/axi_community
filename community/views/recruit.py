@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from ..forms import RecruitApplicationForm, RecruitForm
 from ..models import Recruit, RecruitApplication, Notification
 
 # 1. 모집 목록 보기
@@ -36,23 +37,19 @@ def recruit_detail(request, recruit_id):
 @login_required
 def recruit_create(request):
     if request.method == 'POST':
-        title = request.POST.get('title')
-        content = request.POST.get('content')
-        field = request.POST.get('field')
-        headcount = request.POST.get('headcount', 1)
-        deadline = request.POST.get('deadline')
+        # POST 값을 그대로 create() 에 넣으면 빈 날짜·빈 인원수에서 ValueError 로 500 이 납니다.
+        # RecruitForm 이 형식과 범위를 먼저 확인합니다.
+        form = RecruitForm(request.POST)
 
-        recruit = Recruit.objects.create(
-            writer=request.user,
-            title=title,
-            content=content,
-            field=field,
-            headcount=headcount,
-            deadline=deadline,
-        )
-        return redirect('recruit_detail', recruit_id=recruit.recruit_id)
-        
-    return render(request, 'recruit/recruit_form.html')
+        if form.is_valid():
+            recruit = form.save(commit=False)
+            recruit.writer = request.user
+            recruit.save()
+            return redirect('recruit_detail', recruit_id=recruit.recruit_id)
+    else:
+        form = RecruitForm()
+
+    return render(request, 'recruit/recruit_form.html', {'form': form})
 
 # 4. 지원하기 (Notification 알림 연동)
 @login_required
@@ -62,13 +59,18 @@ def recruit_apply(request, recruit_id):
     if recruit.is_closed or recruit.deadline < timezone.now().date():
         messages.error(request, "이미 마감된 모집입니다.")
         return redirect('recruit_detail', recruit_id=recruit_id)
-        
+
     if request.method == 'POST':
-        message_text = request.POST.get('message', '')
+        form = RecruitApplicationForm(request.POST)
+
+        if not form.is_valid():
+            messages.error(request, "지원 메시지를 다시 확인해 주세요.")
+            return redirect('recruit_detail', recruit_id=recruit_id)
+
         app, created = RecruitApplication.objects.get_or_create(
             recruit=recruit,
             applicant=request.user,
-            defaults={'message': message_text}
+            defaults={'message': form.cleaned_data['message']}
         )
         if created:
             # 모집 작성자에게 알림 발송

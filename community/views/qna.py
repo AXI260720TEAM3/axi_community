@@ -383,6 +383,13 @@ def qna_answer(request, post_id):
                 actor=request.user,
             )
 
+        else:
+            # 그냥 돌려보내면 쓰던 답변이 사라진 채 아무 안내도 없습니다
+            messages.error(
+                request,
+                "답변 제목과 내용을 모두 입력해주세요.",
+            )
+
         return redirect(
             "qna_detail",
             post_id=question.post_id,

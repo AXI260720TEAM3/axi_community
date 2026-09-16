@@ -8,6 +8,7 @@ from django.views.decorators.http import require_POST
 
 from ..models import Attachment, Board, BoardPermission, Notification, Post
 from ..permissions import can_write
+from .post import attachment_error
 
 
 PAGE_SIZE = 10
@@ -172,6 +173,20 @@ def qna_edit(request, post_id):
                 "nav_current": "qna",
             })
 
+        files = request.FILES.getlist("files")
+        error = attachment_error(files)
+
+        if error:
+            messages.error(request, error)
+
+            return render(request, "qna/question_edit.html", {
+                "question": question,
+                "title": title,
+                "content": content,
+                "attachments": question.attachments.all(),
+                "nav_current": "qna",
+            })
+
         question.title = title
         question.content = content
         question.save(
@@ -186,7 +201,7 @@ def qna_edit(request, post_id):
                 attachment_id__in=delete_files,
             ).delete()
 
-        for f in request.FILES.getlist("files"):
+        for f in files:
             Attachment.objects.create(
                 post=question,
                 origin_name=f.name,
@@ -231,6 +246,22 @@ def qna_ask(request):
         title = request.POST.get("title", "").strip()
         content = request.POST.get("content", "").strip()
 
+        # 첨부 검사는 일반 게시판(post.py)과 같은 규칙을 씁니다.
+        # 글을 만들기 전에 봐야 첨부만 거부되고 글은 남는 일이 없습니다.
+        files = request.FILES.getlist("files")
+        error = attachment_error(files)
+
+        if error:
+            messages.error(request, error)
+
+            return render(request, "qna/ask.html", {
+                "board": board,
+                "title": title,
+                "content": content,
+                "error": error,
+                "nav_current": "qna",
+            })
+
         if title and content:
             question = Post.objects.create(
                 board=board,
@@ -239,7 +270,7 @@ def qna_ask(request):
                 content=content,
             )
 
-            for f in request.FILES.getlist("files"):
+            for f in files:
                 Attachment.objects.create(
                     post=question,
                     origin_name=f.name,
@@ -251,6 +282,9 @@ def qna_ask(request):
                 "qna_detail",
                 post_id=question.post_id,
             )
+
+        # ask.html 에는 error 를 그리는 자리가 없습니다. messages 로도 함께 알립니다.
+        messages.error(request, "제목과 내용을 모두 입력해주세요.")
 
         return render(request, "qna/ask.html", {
             "board": board,
@@ -307,6 +341,17 @@ def qna_answer(request, post_id):
         title = request.POST.get("title", "").strip()
         content = request.POST.get("content", "").strip()
 
+        files = request.FILES.getlist("files")
+        error = attachment_error(files)
+
+        if error:
+            messages.error(request, error)
+
+            return redirect(
+                "qna_detail",
+                post_id=question.post_id,
+            )
+
         if title and content:
             answer = Post.objects.create(
                 board=question.board,
@@ -316,7 +361,7 @@ def qna_answer(request, post_id):
                 content=content,
             )
 
-            for f in request.FILES.getlist("files"):
+            for f in files:
                 Attachment.objects.create(
                     post=answer,
                     origin_name=f.name,
@@ -436,6 +481,21 @@ def qna_edit_answer(request, post_id, answer_id):
                 "nav_current": "qna",
             })
 
+        files = request.FILES.getlist("files")
+        error = attachment_error(files)
+
+        if error:
+            messages.error(request, error)
+
+            return render(request, "qna/answer_edit.html", {
+                "question": question,
+                "answer": answer,
+                "title": title,
+                "content": content,
+                "attachments": answer.attachments.all(),
+                "nav_current": "qna",
+            })
+
         answer.title = title
         answer.content = content
         answer.save(
@@ -450,7 +510,7 @@ def qna_edit_answer(request, post_id, answer_id):
                 attachment_id__in=delete_files,
             ).delete()
 
-        for f in request.FILES.getlist("files"):
+        for f in files:
             Attachment.objects.create(
                 post=answer,
                 origin_name=f.name,

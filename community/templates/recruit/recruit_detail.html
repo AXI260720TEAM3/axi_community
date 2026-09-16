@@ -127,15 +127,37 @@
             </td>
             <td style="text-align: center;">
               <div style="display: flex; gap: 4px; justify-content: center;">
+                {% comment %}
+                  상태 변경은 반드시 POST 로 보냅니다. 링크(GET)로 두면 CSRF 토큰 없이 눌리고,
+                  브라우저 미리읽기나 메신저 링크 미리보기만으로도 승인·거절이 처리됩니다.
+                {% endcomment %}
                 {% if app.status == '승인' %}
-                  <a href="{% url 'recruit_app_decide' app.application_id '거절' %}" class="btn quiet sm" onclick="return confirm('거절 상태로 변경하시겠습니까?')">거절로 변경</a>
-                  <a href="{% url 'recruit_app_decide' app.application_id '대기' %}" class="btn quiet sm" style="color: #666;" onclick="return confirm('대기 상태로 되돌리시겠습니까?')">대기로 초기화</a>
+                  <form method="post" action="{% url 'recruit_app_decide' app.application_id '거절' %}" style="display:inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn quiet sm" onclick="return confirm('거절 상태로 변경하시겠습니까?')">거절로 변경</button>
+                  </form>
+                  <form method="post" action="{% url 'recruit_app_decide' app.application_id '대기' %}" style="display:inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn quiet sm" style="color: #666;" onclick="return confirm('대기 상태로 되돌리시겠습니까?')">대기로 초기화</button>
+                  </form>
                 {% elif app.status == '거절' %}
-                  <a href="{% url 'recruit_app_decide' app.application_id '승인' %}" class="btn sm" onclick="return confirm('승인 상태로 변경하시겠습니까?')">승인으로 변경</a>
-                  <a href="{% url 'recruit_app_decide' app.application_id '대기' %}" class="btn quiet sm" style="color: #666;" onclick="return confirm('대기 상태로 되돌리시겠습니까?')">대기로 초기화</a>
+                  <form method="post" action="{% url 'recruit_app_decide' app.application_id '승인' %}" style="display:inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn sm" onclick="return confirm('승인 상태로 변경하시겠습니까?')">승인으로 변경</button>
+                  </form>
+                  <form method="post" action="{% url 'recruit_app_decide' app.application_id '대기' %}" style="display:inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn quiet sm" style="color: #666;" onclick="return confirm('대기 상태로 되돌리시겠습니까?')">대기로 초기화</button>
+                  </form>
                 {% else %}
-                  <a href="{% url 'recruit_app_decide' app.application_id '승인' %}" class="btn sm" onclick="return confirm('승인하시겠습니까?')">승인</a>
-                  <a href="{% url 'recruit_app_decide' app.application_id '거절' %}" class="btn quiet sm" onclick="return confirm('거절하시겠습니까?')">거절</a>
+                  <form method="post" action="{% url 'recruit_app_decide' app.application_id '승인' %}" style="display:inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn sm" onclick="return confirm('승인하시겠습니까?')">승인</button>
+                  </form>
+                  <form method="post" action="{% url 'recruit_app_decide' app.application_id '거절' %}" style="display:inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn quiet sm" onclick="return confirm('거절하시겠습니까?')">거절</button>
+                  </form>
                 {% endif %}
               </div>
             </td>

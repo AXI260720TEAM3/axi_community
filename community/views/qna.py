@@ -8,7 +8,7 @@ from django.views.decorators.http import require_POST
 
 from ..models import Attachment, Board, BoardPermission, Notification, Post
 from ..permissions import can_write
-from .post import attachment_error, count_view
+from .post import attachment_error, count_view, delete_attachments
 
 
 PAGE_SIZE = 10
@@ -198,13 +198,8 @@ def qna_edit(request, post_id):
             update_fields=["title", "content"]
         )
 
-        delete_files = request.POST.getlist("delete_files")
-
-        if delete_files:
-            Attachment.objects.filter(
-                post=question,
-                attachment_id__in=delete_files,
-            ).delete()
+        # DB 행만 지우면 디스크에 파일이 남습니다. 공통 함수가 둘 다 지웁니다
+        delete_attachments(question, request.POST.getlist("delete_files"))
 
         for f in files:
             Attachment.objects.create(
@@ -524,13 +519,7 @@ def qna_edit_answer(request, post_id, answer_id):
             update_fields=["title", "content"]
         )
 
-        delete_files = request.POST.getlist("delete_files")
-
-        if delete_files:
-            Attachment.objects.filter(
-                post=answer,
-                attachment_id__in=delete_files,
-            ).delete()
+        delete_attachments(answer, request.POST.getlist("delete_files"))
 
         for f in files:
             Attachment.objects.create(

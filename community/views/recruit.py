@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django.urls import reverse  # [추가] reverse 함수 임포트
 from ..forms import RecruitApplicationForm, RecruitForm
 from ..models import Recruit, RecruitApplication, Notification
 
@@ -37,8 +38,6 @@ def recruit_detail(request, recruit_id):
 @login_required
 def recruit_create(request):
     if request.method == 'POST':
-        # POST 값을 그대로 create() 에 넣으면 빈 날짜·빈 인원수에서 ValueError 로 500 이 납니다.
-        # RecruitForm 이 형식과 범위를 먼저 확인합니다.
         form = RecruitForm(request.POST)
 
         if form.is_valid():
@@ -56,7 +55,6 @@ def recruit_create(request):
 def recruit_apply(request, recruit_id):
     recruit = get_object_or_404(Recruit, pk=recruit_id, is_deleted=False)
 
-    # 화면에서는 작성자에게 지원 폼을 감추지만, 주소로 직접 들어오면 그대로 통과합니다.
     if request.user == recruit.writer:
         messages.error(request, "내가 올린 모집에는 지원할 수 없습니다.")
         return redirect('recruit_detail', recruit_id=recruit_id)
@@ -78,11 +76,12 @@ def recruit_apply(request, recruit_id):
             defaults={'message': form.cleaned_data['message']}
         )
         if created:
-            # 모집 작성자에게 알림 발송
+            # 모집 작성자에게 알림 발송 (link 추가)
             Notification.notify(
                 receiver=recruit.writer,
                 kind=Notification.Kind.RECRUIT,
                 message=f"'{recruit.title}' 모집에 새로운 지원자가 있습니다.",
+                link=reverse("recruit_detail", args=[recruit.recruit_id]),  # [수정] 이동할 링크 추가
                 actor=request.user
             )
             messages.success(request, "지원서가 제출되었습니다.")
@@ -99,17 +98,14 @@ def recruit_application_decide(request, app_id, status):
         messages.error(request, "권한이 없습니다.")
         return redirect('recruit_detail', recruit_id=application.recruit.recruit_id)
         
-    # 모델에 정의된 Enum 값 및 입력 파라미터 매핑
     valid_statuses = {
-        RecruitApplication.Status.APPROVED: RecruitApplication.Status.APPROVED, # '승인'
-        RecruitApplication.Status.REJECTED: RecruitApplication.Status.REJECTED, # '거절'
-        RecruitApplication.Status.WAITING: RecruitApplication.Status.WAITING,  # '대기'
+        RecruitApplication.Status.APPROVED: RecruitApplication.Status.APPROVED,
+        RecruitApplication.Status.REJECTED: RecruitApplication.Status.REJECTED,
+        RecruitApplication.Status.WAITING: RecruitApplication.Status.WAITING,
     }
 
     target_status = valid_statuses.get(status)
 
-    # 모집 인원보다 많이 승인되지 않게 막습니다.
-    # 이미 승인된 지원을 다시 승인하는 경우는 인원이 늘지 않으므로 통과시킵니다.
     if (
         target_status == RecruitApplication.Status.APPROVED
         and application.status != RecruitApplication.Status.APPROVED
@@ -126,7 +122,6 @@ def recruit_application_decide(request, app_id, status):
         application.decided_at = timezone.now() if target_status != RecruitApplication.Status.WAITING else None
         application.save()
         
-        # 알림 메시지 문구 설정
         if target_status == RecruitApplication.Status.APPROVED:
             msg = f"'{application.recruit.title}' 지원 결과: 승인되었습니다."
         elif target_status == RecruitApplication.Status.REJECTED:
@@ -134,11 +129,12 @@ def recruit_application_decide(request, app_id, status):
         else:
             msg = f"'{application.recruit.title}' 지원 상태가 '대기'로 재조정되었습니다."
 
-        # 지원자에게 상태 변경 알림 발송
+        # 지원자에게 상태 변경 알림 발송 (link 추가)
         Notification.notify(
             receiver=application.applicant,
             kind=Notification.Kind.RECRUIT,
             message=msg,
+            link=reverse("recruit_detail", args=[application.recruit.recruit_id]),  # [수정] 이동할 링크 추가
             actor=request.user
         )
         messages.success(request, f"지원 상태가 '{target_status}'(으)로 변경되었습니다.")
@@ -161,14 +157,12 @@ def recruit_cancel(request, recruit_id):
     if request.method == 'POST':
         recruit = get_object_or_404(Recruit, pk=recruit_id)
         
-        # 본인의 지원 내역 조회
         application = RecruitApplication.objects.filter(
             recruit=recruit, 
             applicant=request.user
         ).first()
 
         if application:
-            # 이미 승인/거절 처리된 지원건은 취소할 수 없도록 방어
             if application.status != '대기':
                 messages.error(request, "이미 작성자가 처리를 완료하여 지원을 취소할 수 없습니다.")
             else:
@@ -184,7 +178,6 @@ def recruit_cancel(request, recruit_id):
 def recruit_delete(request, recruit_id):
     recruit = get_object_or_404(Recruit, pk=recruit_id, is_deleted=False)
     
-    # 작성자 본인 확인
     if request.user != recruit.writer:
         messages.error(request, "삭제 권한이 없습니다.")
         return redirect('recruit_detail', recruit_id=recruit_id)

@@ -51,8 +51,10 @@ def message_box(request):
     selected_receiver = None
 
     if receiver_login_id:
+        # 탈퇴한 회원(is_active=False)은 쪽지를 열어볼 수 없으니 받는 사람이 될 수 없습니다.
         selected_receiver = User.objects.filter(
             username=receiver_login_id,
+            is_active=True,
         ).first()
 
         if selected_receiver is None:
@@ -70,6 +72,7 @@ def message_box(request):
 
     member_choices = (
         User.objects
+        .filter(is_active=True)
         .exclude(pk=request.user.pk)
         .select_related("user_type")
         .order_by("member_name")
@@ -272,6 +275,7 @@ def message_send(request):
 
     receiver = User.objects.filter(
         username=receiver_login_id,
+        is_active=True,
     ).first()
 
     if receiver is None:

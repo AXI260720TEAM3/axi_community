@@ -145,14 +145,22 @@ def my_posts_ajax(request):
 
 @login_required
 def account_delete(request):
-    """회원 탈퇴 처리 (소프트 삭제)"""
+    """회원 탈퇴 처리 (계정 비활성화)"""
     if request.method == 'POST':
         user = request.user
-        
-        # 계정 비활성화 처리
+
+        # 회원정보 수정과 같은 기준으로 본인 확인을 받습니다.
+        # 남이 자리를 비운 사이에 눌러버리면 되돌릴 방법이 없습니다.
+        password = request.POST.get('password')
+
+        if not password or not user.check_password(password):
+            messages.error(request, "비밀번호가 일치하지 않습니다. 탈퇴가 취소되었습니다.")
+            return redirect('mypage')
+
+        # 계정 비활성화 처리 (글과 댓글은 그대로 남습니다)
         user.is_active = False
-        user.save()
-        
+        user.save(update_fields=['is_active'])
+
         # 로그아웃
         logout(request)
         

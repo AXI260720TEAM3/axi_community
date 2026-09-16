@@ -88,6 +88,22 @@ class RecruitForm(forms.ModelForm):
 
         return deadline
 
+class ProfileEditForm(forms.ModelForm):
+    """마이페이지 회원정보 수정 폼.
+
+    모델에 붙여둔 검사(이메일 형식, 전화번호 숫자 10~11자리, 길이 제한)는
+    폼을 거쳐야 실행됩니다. user.save() 만 부르면 전부 그냥 저장됩니다.
+    """
+
+    class Meta:
+        model = User
+        fields = ['email', 'phone', 'address']
+        error_messages = {
+            'email': {'required': '이메일을 입력하세요.', 'invalid': '이메일 형식이 올바르지 않습니다.'},
+            'phone': {'required': '전화번호를 입력하세요.'},
+            'address': {'required': '주소를 입력하세요.'},
+        }
+
 
 class RecruitApplicationForm(forms.ModelForm):
     class Meta:

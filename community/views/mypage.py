@@ -20,11 +20,8 @@ def mypage(request):
     free_post_count = my_posts.filter(board__board_name='자유게시판').count()
     qna_count = my_posts.filter(board__board_name='Q&A').count()
 
-    # 안 읽은 쪽지 수 조회 (read_at이 None/Null인 데이터)
-    unread_count = Message.objects.filter(
-        receiver=user, 
-        read_at__isnull=True
-        ).count()
+    # 안 읽은 쪽지 수. 사이드바 배지와 같은 기준을 씁니다
+    unread_count = Message.objects.unread_for(user).count()
 
     context = {
         'nav_current': 'mypage',

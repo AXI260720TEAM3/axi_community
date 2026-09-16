@@ -388,8 +388,24 @@ class Attachment(models.Model):
 
 # ================================================================ 쪽지
 
+class MessageQuerySet(models.QuerySet):
+    def unread_for(self, user):
+        """user 가 아직 읽지 않은 쪽지.
+
+        내 쪽지함에서 지운 쪽지는 빼야 합니다. 화면마다 조건을 따로 적으면
+        사이드바 배지와 마이페이지 숫자가 서로 달라집니다.
+        """
+        return self.filter(
+            receiver=user,
+            read_at__isnull=True,
+            receiver_deleted=False,
+        )
+
+
 class Message(models.Model):
     """회원 사이의 1:1 쪽지. read_at 이 비어 있으면 아직 읽지 않은 쪽지입니다."""
+
+    objects = MessageQuerySet.as_manager()
 
     message_id = models.AutoField(primary_key=True)
     sender = models.ForeignKey(

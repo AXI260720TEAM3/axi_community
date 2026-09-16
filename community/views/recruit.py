@@ -1,21 +1,46 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from ..forms import RecruitApplicationForm, RecruitForm
 from ..models import Recruit, RecruitApplication, Notification
 
+PAGE_SIZE = 10
+
+
 # 1. 모집 목록 보기
 def recruit_list(request):
-    recruits = Recruit.objects.filter(is_deleted=False).select_related('writer')
-    
-    # 제목/모집분야 검색 필터
-    q = request.GET.get('q')
-    if q:
-        recruits = recruits.filter(title__icontains=q)
-        
-    return render(request, 'recruit/recruit_list.html', {'recruits': recruits})
+    recruits = (
+        Recruit.objects
+        .filter(is_deleted=False)
+        .select_related('writer', 'writer__user_type')
+    )
+
+    # 제목·소개·모집분야를 함께 찾습니다. 검색창 안내 문구와 실제 범위를 맞춥니다
+    keyword = request.GET.get('q', '').strip()
+    if keyword:
+        recruits = recruits.filter(
+            Q(title__icontains=keyword)
+            | Q(content__icontains=keyword)
+            | Q(field__icontains=keyword)
+        )
+
+    # 글이 쌓이면 한 화면에 다 쏟아집니다. 게시판과 같은 방식으로 나눕니다
+    paginator = Paginator(recruits, PAGE_SIZE)
+    page = paginator.get_page(request.GET.get('page'))
+
+    return render(request, 'recruit/recruit_list.html', {
+        'recruits': page,
+        'page': page,
+        'keyword': keyword,
+        'page_range': paginator.get_elided_page_range(page.number, on_each_side=2, on_ends=1),
+        'ellipsis': Paginator.ELLIPSIS,
+        'nav_current': 'recruit',
+    })
 
 # 2. 모집 상세 및 (작성자일 경우) 지원자 목록 보기
 def recruit_detail(request, recruit_id):
@@ -31,6 +56,7 @@ def recruit_detail(request, recruit_id):
         'applications': applications,
         'has_applied': has_applied,
         'is_owner': request.user == recruit.writer,
+        'nav_current': 'recruit',
     })
 
 # 3. 모집글 작성
@@ -49,7 +75,10 @@ def recruit_create(request):
     else:
         form = RecruitForm()
 
-    return render(request, 'recruit/recruit_form.html', {'form': form})
+    return render(request, 'recruit/recruit_form.html', {
+        'form': form,
+        'nav_current': 'recruit',
+    })
 
 # 4. 지원하기 (Notification 알림 연동)
 @login_required
@@ -83,6 +112,7 @@ def recruit_apply(request, recruit_id):
                 receiver=recruit.writer,
                 kind=Notification.Kind.RECRUIT,
                 message=f"'{recruit.title}' 모집에 새로운 지원자가 있습니다.",
+                link=reverse('recruit_detail', args=[recruit.recruit_id]),
                 actor=request.user
             )
             messages.success(request, "지원서가 제출되었습니다.")
@@ -139,6 +169,7 @@ def recruit_application_decide(request, app_id, status):
             receiver=application.applicant,
             kind=Notification.Kind.RECRUIT,
             message=msg,
+            link=reverse('recruit_detail', args=[application.recruit.recruit_id]),
             actor=request.user
         )
         messages.success(request, f"지원 상태가 '{target_status}'(으)로 변경되었습니다.")

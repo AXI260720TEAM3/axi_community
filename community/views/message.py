@@ -21,11 +21,7 @@ def message_box(request):
     if current_tab not in ("received", "sent"):
         current_tab = "received"
 
-    unread_count = Message.objects.filter(
-        receiver=request.user,
-        read_at__isnull=True,
-        receiver_deleted=False,
-    ).count()
+    unread_count = Message.objects.unread_for(request.user).count()
 
     if current_tab == "sent":
         messages_queryset = (

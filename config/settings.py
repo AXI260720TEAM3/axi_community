@@ -40,6 +40,34 @@ CSRF_TRUSTED_ORIGINS = ['https://itda.taila66801.ts.net']
 # 바깥 https 는 터널이 처리하고 Django 에는 http 로 들어옵니다. 그 사실을 알려줍니다.
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+# ---- 공개 배포용 보안 설정 (manage.py check --deploy 경고 대응)
+#
+# https 로 들어오는 터널 주소로만 서비스할 때 켭니다. .env 에 아래 한 줄을 넣으세요.
+#     SECURE=True
+#
+# DEBUG 에 묶지 않은 이유: 이 프로젝트는 배포 PC 에서도 DEBUG=False 로 두고
+# http://127.0.0.1:8000 으로 직접 확인합니다. DEBUG 에 묶으면 그 순간
+# 쿠키가 https 로만 전송되고 모든 요청이 https 로 튕겨서 로컬 확인이 막힙니다.
+# 그래서 기본값은 꺼짐이고, 공개할 때만 켜는 스위치로 두었습니다.
+SECURE = os.getenv('SECURE', 'False').strip().lower() == 'true'
+
+# 세션·CSRF 쿠키를 https 로만 보냅니다. 중간에서 쿠키를 주워 로그인 상태를 훔치지 못하게 합니다.
+SESSION_COOKIE_SECURE = SECURE
+CSRF_COOKIE_SECURE = SECURE
+
+# 자바스크립트가 세션 쿠키를 읽지 못하게 합니다(기본값이지만 명시해 둡니다).
+SESSION_COOKIE_HTTPONLY = True
+
+# http 로 들어온 요청을 https 로 돌려보냅니다.
+# 위의 SECURE_PROXY_SSL_HEADER 가 있어야 터널 뒤에서 무한 리다이렉트가 생기지 않습니다.
+SECURE_SSL_REDIRECT = SECURE
+
+# HSTS: 이 주소는 https 로만 접속하라고 브라우저에 기억시킵니다.
+# 한 번 받은 브라우저는 이 시간 동안 http 접속을 시도조차 하지 않습니다.
+# 되돌리기 번거로우니 1시간으로 짧게 시작합니다. 문제 없으면 31536000(1년)으로 올리세요.
+SECURE_HSTS_SECONDS = 3600 if SECURE else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = SECURE
+
 
 # Application definition
 

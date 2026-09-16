@@ -21,11 +21,7 @@ def sidebar(request):
     notification_unread_count = 0
 
     if request.user.is_authenticated:
-        unread = Message.objects.filter(
-            receiver=request.user,
-            read_at__isnull=True,
-            receiver_deleted=False,
-        ).count()
+        unread = Message.objects.unread_for(request.user).count()
 
         notification_unread_count = Notification.objects.filter(
             receiver=request.user,

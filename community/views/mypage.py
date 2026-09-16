@@ -6,7 +6,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 
 from community.forms import ProfileEditForm
-from community.models import Post, Board, Message, PostLike
+from community.models import Post, Board, Message, PostComment, PostLike
 
 
 @login_required
@@ -14,24 +14,25 @@ def mypage(request):
     user = request.user
 
     # 내가 쓴 글 목록
-    my_posts = Post.objects.visible().filter(writer=user).order_by('-created_at')
+    # roots() 로 걸러야 Q&A 답변이 '내가 쓴 글' 에 섞이지 않습니다.
+    my_posts = Post.objects.visible().roots().filter(writer=user).order_by('-created_at')
 
     # 게시판 이름(board_name)으로 직접 카운트 조회
     free_post_count = my_posts.filter(board__board_name='자유게시판').count()
     qna_count = my_posts.filter(board__board_name='Q&A').count()
 
-    # 안 읽은 쪽지 수 조회 (read_at이 None/Null인 데이터)
-    unread_count = Message.objects.filter(
-        receiver=user, 
-        read_at__isnull=True
-        ).count()
+    # 내가 단 댓글 수 (대댓글 포함, 지운 것 제외)
+    comment_count = PostComment.objects.filter(writer=user, is_deleted=False).count()
+
+    # 안 읽은 쪽지 수. 사이드바 배지와 같은 기준을 씁니다
+    unread_count = Message.objects.unread_for(user).count()
 
     context = {
         'nav_current': 'mypage',
         'my_posts': my_posts,
         'free_post_count': free_post_count,
         'qna_count': qna_count,
-        'comment_count': 0,
+        'comment_count': comment_count,
         'unread_message_count': unread_count,
     }
 
@@ -127,11 +128,13 @@ def my_posts_ajax(request):
 
     # 2. 일반 게시판 탭 클릭 시 (내가 쓴 글)
     else:
+        # roots(): Q&A 탭에 내가 쓴 '답변' 이 질문인 척 섞여 나오지 않게 합니다
         posts = (
-            Post.objects.filter(
-                writer=user, 
-                board__board_name=board_name, 
-                is_deleted=False
+            Post.objects.visible()
+            .roots()
+            .filter(
+                writer=user,
+                board__board_name=board_name,
             )
             .select_related('board')
             .order_by('-created_at')
@@ -142,14 +145,22 @@ def my_posts_ajax(request):
 
 @login_required
 def account_delete(request):
-    """회원 탈퇴 처리 (소프트 삭제)"""
+    """회원 탈퇴 처리 (계정 비활성화)"""
     if request.method == 'POST':
         user = request.user
-        
-        # 계정 비활성화 처리
+
+        # 회원정보 수정과 같은 기준으로 본인 확인을 받습니다.
+        # 남이 자리를 비운 사이에 눌러버리면 되돌릴 방법이 없습니다.
+        password = request.POST.get('password')
+
+        if not password or not user.check_password(password):
+            messages.error(request, "비밀번호가 일치하지 않습니다. 탈퇴가 취소되었습니다.")
+            return redirect('mypage')
+
+        # 계정 비활성화 처리 (글과 댓글은 그대로 남습니다)
         user.is_active = False
-        user.save()
-        
+        user.save(update_fields=['is_active'])
+
         # 로그아웃
         logout(request)
         

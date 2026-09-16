@@ -55,13 +55,13 @@ def recruit_create(request):
 @login_required
 def recruit_apply(request, recruit_id):
     recruit = get_object_or_404(Recruit, pk=recruit_id, is_deleted=False)
-    
+
     # 화면에서는 작성자에게 지원 폼을 감추지만, 주소로 직접 들어오면 그대로 통과합니다.
     if request.user == recruit.writer:
         messages.error(request, "내가 올린 모집에는 지원할 수 없습니다.")
         return redirect('recruit_detail', recruit_id=recruit_id)
 
-    if recruit.is_closed or recruit.deadline < timezone.now().date():
+    if not recruit.is_recruiting:
         messages.error(request, "이미 마감된 모집입니다.")
         return redirect('recruit_detail', recruit_id=recruit_id)
 

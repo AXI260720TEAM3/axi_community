@@ -579,6 +579,20 @@ class Recruit(models.Model):
         return self.applications.filter(status=RecruitApplication.Status.APPROVED).count()
 
     @property
+    def is_expired(self):
+        """마감일이 지났는지. USE_TZ=False 라서 now().date() 로 비교합니다."""
+        return self.deadline < timezone.now().date()
+
+    @property
+    def is_recruiting(self):
+        """아직 지원을 받을 수 있는지.
+
+        화면과 서버가 따로 판단하면 '모집중'으로 보이는데 제출은 거부되는 일이 생깁니다.
+        목록·상세·지원 처리 모두 이 값 하나만 보세요.
+        """
+        return not self.is_closed and not self.is_expired
+
+    @property
     def is_full(self):
         """승인 인원이 모집 인원에 찼는지"""
         return self.approved_count >= self.headcount

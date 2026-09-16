@@ -10,10 +10,12 @@
 <article class="panel">
   <div class="post-head">
     <div style="margin-bottom: 8px;">
-      {% if recruit.is_closed %}
+      {% if recruit.is_recruiting %}
+        <span style="background:var(--wash); color:var(--primary); padding:3px 8px; border-radius:4px; font-weight:bold;">모집중</span>
+      {% elif recruit.is_closed %}
         <span class="note" style="background:#eee; padding:3px 8px; border-radius:4px;">모집 마감</span>
       {% else %}
-        <span style="background:var(--wash); color:var(--primary); padding:3px 8px; border-radius:4px; font-weight:bold;">모집중</span>
+        <span class="note" style="background:#eee; padding:3px 8px; border-radius:4px;">기간 종료</span>
       {% endif %}
       <span class="meta-inline" style="margin-left: 6px;">분야: <b>{{ recruit.field }}</b></span>
     </div>
@@ -77,8 +79,11 @@
           </button>
         </form>
       </div>
-    {% elif recruit.is_closed %}
-      <p style="color: var(--muted); margin-top: 10px;">모집이 마감되어 더 이상 지원할 수 없습니다.</p>
+    {% elif not recruit.is_recruiting %}
+      {% comment %} 마감일이 지난 글에 지원 폼을 열어두면, 다 쓰고 제출한 뒤에야 거부 안내를 받습니다. {% endcomment %}
+      <p style="color: var(--muted); margin-top: 10px;">
+        {% if recruit.is_closed %}모집이 마감되어{% else %}마감일이 지나{% endif %} 더 이상 지원할 수 없습니다.
+      </p>
     {% else %}
       <form method="post" action="{% url 'recruit_apply' recruit.recruit_id %}" style="margin-top: 15px;">
         {% csrf_token %}

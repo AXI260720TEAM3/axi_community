@@ -27,6 +27,26 @@ logger = logging.getLogger(__name__)
 SEEN_LIMIT = 50
 
 
+def count_view(request, post):
+    """조회수를 한 번 올립니다.
+
+    한 번 본 글은 이 브라우저 세션이 끝날 때까지 다시 세지 않습니다.
+    세션에 최근 SEEN_LIMIT 개만 남깁니다. 다 쌓으면 세션이 계속 불어납니다.
+    그보다 더 많이 돌아본 뒤 옛 글로 되돌아가면 조회수가 한 번 더 오릅니다. 그 정도는 감수합니다.
+
+    Q&A 상세(qna_detail)도 이 함수를 불러야 합니다. 화면마다 따로 세면 규칙이 갈라집니다.
+    """
+    seen = request.session.get("seen_posts", [])
+
+    if post.post_id in seen:
+        return
+
+    Post.objects.filter(pk=post.post_id).update(view_count=F("view_count") + 1)
+    post.view_count += 1
+    seen.append(post.post_id)
+    request.session["seen_posts"] = seen[-SEEN_LIMIT:]
+
+
 def post_detail(request, post_id):
     post = get_object_or_404(
         Post.objects.select_related("board", "writer"), pk=post_id, is_deleted=False
@@ -38,15 +58,8 @@ def post_detail(request, post_id):
     if post.board.is_qna:
         return redirect("qna_detail", post_id=post.parent_id or post.post_id)
 
-    # 조회수: 한 번 본 글은 이 브라우저 세션이 끝날 때까지 다시 세지 않습니다.
-    # 세션에 최근 SEEN_LIMIT 개만 남깁니다. 다 쌓으면 세션이 계속 불어납니다.
-    # 그보다 더 많이 돌아본 뒤 옛 글로 되돌아가면 조회수가 한 번 더 오릅니다. 그 정도는 감수합니다.
-    seen = request.session.get("seen_posts", [])
-    if post.post_id not in seen:
-        Post.objects.filter(pk=post.post_id).update(view_count=F("view_count") + 1)
-        post.view_count += 1
-        seen.append(post.post_id)
-        request.session["seen_posts"] = seen[-SEEN_LIMIT:]
+    count_view(request, post)
+
     return render(
         request,
         "board/detail.html",

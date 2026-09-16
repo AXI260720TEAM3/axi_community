@@ -127,6 +127,8 @@
         <span>첨부 {{ attachments|length }}</span>
       {% endif %}
 
+      <span>조회 {{ question.view_count }}</span>
+
       {% if question.updated_at %}
         <span>수정됨</span>
       {% endif %}

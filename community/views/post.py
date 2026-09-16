@@ -47,6 +47,30 @@ def count_view(request, post):
     request.session["seen_posts"] = seen[-SEEN_LIMIT:]
 
 
+def visible_comments(post):
+    """화면에 그릴 댓글 목록.
+
+    대댓글은 원 댓글 아래에 붙여서 그립니다. 그래서 원 댓글을 목록에서 빼면
+    답글까지 화면에서 사라집니다(DB 에는 남아 있는데 아무도 볼 수 없게 됩니다).
+    지워진 원 댓글이라도 살아 있는 답글이 있으면 '삭제된 댓글입니다' 자리로 남깁니다.
+    """
+    comments = list(
+        post.comments
+        .select_related("writer", "writer__user_type")
+        .order_by("created_at")
+    )
+
+    # 살아 있는 답글이 달려 있는 원 댓글 번호
+    has_live_reply = {
+        c.parent_id for c in comments if c.parent_id and not c.is_deleted
+    }
+
+    return [
+        c for c in comments
+        if not c.is_deleted or (c.parent_id is None and c.comment_id in has_live_reply)
+    ]
+
+
 def post_detail(request, post_id):
     post = get_object_or_404(
         Post.objects.select_related("board", "writer"), pk=post_id, is_deleted=False
@@ -60,12 +84,15 @@ def post_detail(request, post_id):
 
     count_view(request, post)
 
+    comments = visible_comments(post)
+
     return render(
         request,
         "board/detail.html",
         {
             "post": post,
-            "comments": post.comments.filter(is_deleted=False).select_related("writer"),
+            "comments": comments,
+            "comment_count": sum(1 for c in comments if not c.is_deleted),
             "attachments": post.attachments.all(),
             "is_owner": is_owner(request.user, post),
             "nav_current": post.board_id,

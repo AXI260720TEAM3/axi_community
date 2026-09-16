@@ -47,10 +47,22 @@
 </style>
 
 <div class="panel">
-  <div class="cmt-head">댓글 {{ comments|length }}</div>
+  <div class="cmt-head">댓글 {{ comment_count }}</div>
 
   {% for c in comments %}
     {% if not c.parent_id %}
+
+      {% comment %}
+        지워진 원 댓글이라도 답글이 남아 있으면 자리를 비워둘 수 없습니다.
+        자리를 없애면 그 아래 답글까지 화면에서 통째로 사라집니다.
+      {% endcomment %}
+      {% if c.is_deleted %}
+
+      <div class="cmt gone">
+        <p>삭제된 댓글입니다.</p>
+      </div>
+
+      {% else %}
 
       <div class="cmt">
         <div class="cmt-top">
@@ -102,7 +114,9 @@
         {% endif %}
       </div>
 
+      {% endif %}
 
+      {% comment %} 답글은 원 댓글이 지워졌어도 그대로 보여줍니다 {% endcomment %}
       {% for reply in comments %}
         {% if reply.parent_id == c.comment_id %}
           <div class="cmt cmt-reply">
@@ -135,7 +149,7 @@
       {% endfor %}
 
 
-      {% if user.is_authenticated and c.writer_id != user.member_id %}
+      {% if user.is_authenticated and c.writer_id != user.member_id and not c.is_deleted %}
         <form id="reply-{{ c.comment_id }}"
               class="reply-form"
               method="post"

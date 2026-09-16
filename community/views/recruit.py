@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 from ..models import Recruit, RecruitApplication, Notification
 
 # 1. 모집 목록 보기
@@ -83,6 +84,7 @@ def recruit_apply(request, recruit_id):
 
 # 5. 지원 수락/거절/번복 처리 (작성자 전용)
 @login_required
+@require_POST
 def recruit_application_decide(request, app_id, status):
     application = get_object_or_404(RecruitApplication, pk=app_id)
     
@@ -125,6 +127,7 @@ def recruit_application_decide(request, app_id, status):
 
 # 6. 모집 조기 마감 처리 (작성자 전용)
 @login_required
+@require_POST
 def recruit_close(request, recruit_id):
     recruit = get_object_or_404(Recruit, pk=recruit_id, writer=request.user)
     recruit.is_closed = True

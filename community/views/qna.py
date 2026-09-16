@@ -8,7 +8,7 @@ from django.views.decorators.http import require_POST
 
 from ..models import Attachment, Board, BoardPermission, Notification, Post
 from ..permissions import can_write
-from .post import attachment_error
+from .post import attachment_error, count_view
 
 
 PAGE_SIZE = 10
@@ -118,6 +118,11 @@ def qna_detail(request, post_id):
             )
 
             return redirect("qna_list")
+
+    # 조회수는 일반 게시판과 같은 규칙으로 셉니다.
+    # post_detail 은 Q&A 글을 여기로 넘기기만 하므로, 세지 않으면 Q&A 조회수가 늘 0 입니다.
+    if request.method == "GET":
+        count_view(request, question)
 
     answers = (
         question.answers

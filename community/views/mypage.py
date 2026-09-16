@@ -2,7 +2,10 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 
+from community.forms import ProfileEditForm
 from community.models import Post, Board, Message, PostLike
 
 
@@ -53,13 +56,18 @@ def profile_edit(request):
             messages.error(request, "현재 비밀번호가 일치하지 않습니다.")
             return redirect('mypage')
 
-        # 1. 기본 회원정보 업데이트 (이메일, 전화번호, 주소)
-        if email:
-            user.email = email
-        if phone is not None:
-            user.phone = phone
-        if address is not None:
-            user.address = address
+        # 1. 기본 회원정보 검증 (이메일 형식, 전화번호 숫자 10~11자리, 길이 제한)
+        #    user.save() 만 부르면 모델에 걸어둔 검사가 하나도 실행되지 않습니다.
+        form = ProfileEditForm(
+            {'email': email, 'phone': phone, 'address': address},
+            instance=user,
+        )
+
+        if not form.is_valid():
+            for field_errors in form.errors.values():
+                for text in field_errors:
+                    messages.error(request, text)
+            return redirect('mypage')
 
         # 2. 비밀번호 변경 로직
         if new_password:
@@ -67,11 +75,17 @@ def profile_edit(request):
             if new_password != new_password_confirm:
                 messages.error(request, "새 비밀번호가 서로 일치하지 않습니다.")
                 return redirect('mypage')
-            
-            # 최소 자릿수 검증
-            if len(new_password) < 8:
-                messages.error(request, "비밀번호는 최소 8자 이상이어야 합니다.")
+
+            # settings.AUTH_PASSWORD_VALIDATORS 를 그대로 적용합니다.
+            # 길이만 보면 '12345678' 같은 비밀번호가 그대로 통과합니다.
+            try:
+                validate_password(new_password, user)
+            except ValidationError as exc:
+                for text in exc.messages:
+                    messages.error(request, text)
                 return redirect('mypage')
+
+            user = form.save(commit=False)
 
             # set_password로 비밀번호 해시화 저장
             user.set_password(new_password)
@@ -83,7 +97,7 @@ def profile_edit(request):
             return redirect('mypage')
 
         # 비밀번호를 변경하지 않고 기본 정보만 수정하는 경우
-        user.save()
+        form.save()
         messages.success(request, "회원정보가 수정되었습니다.")
         return redirect('mypage')
 

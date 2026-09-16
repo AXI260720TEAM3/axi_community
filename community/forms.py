@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from community.models import UserType
 from .models import Recruit, RecruitApplication
 
@@ -48,12 +49,61 @@ class SignupForm(forms.ModelForm):
         return user
 
 class RecruitForm(forms.ModelForm):
+    """모집글 작성 폼.
+
+    브라우저의 required 는 개발자 도구나 curl 로 쉽게 지나칠 수 있습니다.
+    빈 값·과거 날짜·이상한 인원수는 여기서 걸러야 뷰가 500 으로 죽지 않습니다.
+    """
+
     class Meta:
         model = Recruit
         fields = ['title', 'field', 'headcount', 'deadline', 'content']
         widgets = {
             'deadline': forms.DateInput(attrs={'type': 'date'}),
         }
+        error_messages = {
+            'title': {'required': '모집 제목을 입력하세요.'},
+            'field': {'required': '모집 분야를 입력하세요.'},
+            'content': {'required': '프로젝트 소개를 입력하세요.'},
+            'headcount': {'required': '모집 인원을 입력하세요.',
+                          'invalid': '모집 인원은 숫자로 입력하세요.'},
+            'deadline': {'required': '모집 마감일을 입력하세요.',
+                         'invalid': '모집 마감일을 날짜로 입력하세요.'},
+        }
+
+    def clean_headcount(self):
+        headcount = self.cleaned_data['headcount']
+
+        if headcount < 1:
+            raise forms.ValidationError("모집 인원은 1명 이상이어야 합니다.")
+
+        return headcount
+
+    def clean_deadline(self):
+        deadline = self.cleaned_data['deadline']
+
+        # 지난 날짜로 올리면 목록에 뜨자마자 마감된 글이 됩니다.
+        if deadline < timezone.now().date():
+            raise forms.ValidationError("마감일은 오늘 이후로 정해주세요.")
+
+        return deadline
+
+class ProfileEditForm(forms.ModelForm):
+    """마이페이지 회원정보 수정 폼.
+
+    모델에 붙여둔 검사(이메일 형식, 전화번호 숫자 10~11자리, 길이 제한)는
+    폼을 거쳐야 실행됩니다. user.save() 만 부르면 전부 그냥 저장됩니다.
+    """
+
+    class Meta:
+        model = User
+        fields = ['email', 'phone', 'address']
+        error_messages = {
+            'email': {'required': '이메일을 입력하세요.', 'invalid': '이메일 형식이 올바르지 않습니다.'},
+            'phone': {'required': '전화번호를 입력하세요.'},
+            'address': {'required': '주소를 입력하세요.'},
+        }
+
 
 class RecruitApplicationForm(forms.ModelForm):
     class Meta:

@@ -27,6 +27,50 @@ logger = logging.getLogger(__name__)
 SEEN_LIMIT = 50
 
 
+def count_view(request, post):
+    """조회수를 한 번 올립니다.
+
+    한 번 본 글은 이 브라우저 세션이 끝날 때까지 다시 세지 않습니다.
+    세션에 최근 SEEN_LIMIT 개만 남깁니다. 다 쌓으면 세션이 계속 불어납니다.
+    그보다 더 많이 돌아본 뒤 옛 글로 되돌아가면 조회수가 한 번 더 오릅니다. 그 정도는 감수합니다.
+
+    Q&A 상세(qna_detail)도 이 함수를 불러야 합니다. 화면마다 따로 세면 규칙이 갈라집니다.
+    """
+    seen = request.session.get("seen_posts", [])
+
+    if post.post_id in seen:
+        return
+
+    Post.objects.filter(pk=post.post_id).update(view_count=F("view_count") + 1)
+    post.view_count += 1
+    seen.append(post.post_id)
+    request.session["seen_posts"] = seen[-SEEN_LIMIT:]
+
+
+def visible_comments(post):
+    """화면에 그릴 댓글 목록.
+
+    대댓글은 원 댓글 아래에 붙여서 그립니다. 그래서 원 댓글을 목록에서 빼면
+    답글까지 화면에서 사라집니다(DB 에는 남아 있는데 아무도 볼 수 없게 됩니다).
+    지워진 원 댓글이라도 살아 있는 답글이 있으면 '삭제된 댓글입니다' 자리로 남깁니다.
+    """
+    comments = list(
+        post.comments
+        .select_related("writer", "writer__user_type")
+        .order_by("created_at")
+    )
+
+    # 살아 있는 답글이 달려 있는 원 댓글 번호
+    has_live_reply = {
+        c.parent_id for c in comments if c.parent_id and not c.is_deleted
+    }
+
+    return [
+        c for c in comments
+        if not c.is_deleted or (c.parent_id is None and c.comment_id in has_live_reply)
+    ]
+
+
 def post_detail(request, post_id):
     post = get_object_or_404(
         Post.objects.select_related("board", "writer"), pk=post_id, is_deleted=False
@@ -38,21 +82,17 @@ def post_detail(request, post_id):
     if post.board.is_qna:
         return redirect("qna_detail", post_id=post.parent_id or post.post_id)
 
-    # 조회수: 한 번 본 글은 이 브라우저 세션이 끝날 때까지 다시 세지 않습니다.
-    # 세션에 최근 SEEN_LIMIT 개만 남깁니다. 다 쌓으면 세션이 계속 불어납니다.
-    # 그보다 더 많이 돌아본 뒤 옛 글로 되돌아가면 조회수가 한 번 더 오릅니다. 그 정도는 감수합니다.
-    seen = request.session.get("seen_posts", [])
-    if post.post_id not in seen:
-        Post.objects.filter(pk=post.post_id).update(view_count=F("view_count") + 1)
-        post.view_count += 1
-        seen.append(post.post_id)
-        request.session["seen_posts"] = seen[-SEEN_LIMIT:]
+    count_view(request, post)
+
+    comments = visible_comments(post)
+
     return render(
         request,
         "board/detail.html",
         {
             "post": post,
-            "comments": post.comments.filter(is_deleted=False).select_related("writer"),
+            "comments": comments,
+            "comment_count": sum(1 for c in comments if not c.is_deleted),
             "attachments": post.attachments.all(),
             "is_owner": is_owner(request.user, post),
             "nav_current": post.board_id,

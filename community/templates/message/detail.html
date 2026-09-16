@@ -44,11 +44,7 @@
 </style>
 
 
-{% for msg in messages %}
-  <div class="message-alert {% if 'success' in msg.tags %}success{% else %}error{% endif %}">
-    {{ msg }}
-  </div>
-{% endfor %}
+{% comment %} 안내 문구는 base.html 이 한 번만 출력합니다. 여기서 또 그리면 같은 글이 두 번 뜹니다. {% endcomment %}
 
 
 <div class="head">

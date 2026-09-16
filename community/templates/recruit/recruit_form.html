@@ -12,30 +12,41 @@
 
 <form class="panel pad" method="post">
   {% csrf_token %}
+
+  {% comment %} 서버가 돌려준 오류를 보여줍니다. 입력값도 그대로 되살립니다. {% endcomment %}
+  {% if form.errors %}
+    <div class="note" style="color:#d9534f; border-color:#d9534f; margin-bottom:16px;">
+      {% for field in form %}
+        {% for message in field.errors %}<div>{{ message }}</div>{% endfor %}
+      {% endfor %}
+      {% for message in form.non_field_errors %}<div>{{ message }}</div>{% endfor %}
+    </div>
+  {% endif %}
+
   <div class="field">
     <label for="r-title">모집 제목</label>
-    <input class="control" id="r-title" name="title" placeholder="예: [백엔드/프론트] 사이드 프로젝트 함께하실 팀원을 모십니다." required>
+    <input class="control" id="r-title" name="title" value="{{ form.title.value|default:'' }}" placeholder="예: [백엔드/프론트] 사이드 프로젝트 함께하실 팀원을 모십니다." required>
   </div>
 
   <div style="display: flex; gap: 16px;">
     <div class="field" style="flex: 1;">
       <label for="r-field">모집 분야</label>
-      <input class="control" id="r-field" name="field" placeholder="예: Python / Django, React, Web Design 등" required>
+      <input class="control" id="r-field" name="field" value="{{ form.field.value|default:'' }}" placeholder="예: Python / Django, React, Web Design 등" required>
     </div>
     <div class="field" style="width: 140px;">
       <label for="r-headcount">모집 인원(명)</label>
-      <input type="number" class="control" id="r-headcount" name="headcount" value="1" min="1" max="50" required>
+      <input type="number" class="control" id="r-headcount" name="headcount" value="{{ form.headcount.value|default:'1' }}" min="1" max="50" required>
     </div>
     <div class="field" style="width: 180px;">
       <label for="r-deadline">모집 마감일</label>
-      <input type="date" class="control" id="r-deadline" name="deadline" required>
+      <input type="date" class="control" id="r-deadline" name="deadline" value="{{ form.deadline.value|default:'' }}" required>
     </div>
   </div>
 
   <div class="field">
     <label for="r-content">프로젝트 및 모집 상세 소개</label>
-    <textarea class="control" id="r-content" name="content" rows="12" 
-              placeholder="프로젝트 목표, 사용 기술 스택, 진행 방식(온/오프라인), 모집 조건 등을 자세히 작성해 주세요." required></textarea>
+    <textarea class="control" id="r-content" name="content" rows="12"
+              placeholder="프로젝트 목표, 사용 기술 스택, 진행 방식(온/오프라인), 모집 조건 등을 자세히 작성해 주세요." required>{{ form.content.value|default:'' }}</textarea>
   </div>
 
   <div class="formfoot">

@@ -9,6 +9,7 @@ from django.http import JsonResponse
 from django.core.cache import cache
 from django.core.mail import send_mail
 from django.conf import settings
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from community.forms import SignupForm
 
@@ -45,18 +46,31 @@ def check_username(request):
 
 def login_view(request):
     """로그인 처리"""
+    # @login_required 가 보낸 주소. 로그인 뒤 원래 보려던 화면으로 되돌려 보냅니다.
+    next_url = request.POST.get('next') or request.GET.get('next') or ''
+
     if request.method == 'POST':
         username_val = request.POST.get('username')
         password_val = request.POST.get('password')
-        
+
         user = authenticate(request, username=username_val, password=password_val)
         if user is not None:
             login(request, user)
+
+            # 주소를 그대로 믿으면 다른 사이트로 튕겨 보낼 수 있습니다(오픈 리다이렉트).
+            # 우리 호스트로 가는 주소일 때만 씁니다.
+            if next_url and url_has_allowed_host_and_scheme(
+                next_url,
+                allowed_hosts={request.get_host()},
+                require_https=request.is_secure(),
+            ):
+                return redirect(next_url)
+
             return redirect('home')
         else:
             messages.error(request, "아이디 또는 비밀번호가 올바르지 않습니다.")
-            
-    return render(request, 'account/login.html')
+
+    return render(request, 'account/login.html', {'next': next_url})
 
 
 def logout_view(request):

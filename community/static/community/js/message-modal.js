@@ -18,6 +18,9 @@
     receiverName.value = link.dataset.name;
     content.value = "";
     showResult("");
+    // 보낸 뒤 잠가둔 버튼을 다시 풀어줍니다.
+    // 이게 없으면 한 번 보낸 다음에는 새로고침 전까지 다시 보낼 수 없습니다.
+    setSending(false);
     modal.classList.add("open");
     modal.setAttribute("aria-hidden", "false");
     content.focus();
@@ -32,6 +35,11 @@
     result.textContent = text;
     result.className = isError ? "message-result error" : "message-result";
     result.style.display = text ? "block" : "none";
+  }
+
+  function setSending(sending) {
+    var button = form.querySelector("button[type=submit]");
+    if (button) button.disabled = sending;
   }
 
   // 문서 전체에서 클릭을 받습니다. 링크가 몇 개든, 어느 화면이든 한 번에 처리됩니다.
@@ -57,8 +65,7 @@
       return;
     }
 
-    var button = form.querySelector("button[type=submit]");
-    button.disabled = true;
+    setSending(true);
     showResult("쪽지를 보내는 중입니다.");
 
     try {
@@ -77,7 +84,7 @@
       setTimeout(closeModal, 700);
     } catch (error) {
       showResult(error.message || "쪽지를 보내지 못했습니다. 다시 시도해주세요.", true);
-      button.disabled = false;
+      setSending(false);
     }
   });
 })();

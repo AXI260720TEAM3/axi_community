@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from ..forms import RecruitApplicationForm, RecruitForm
 from ..models import Recruit, RecruitApplication, Notification
 
 # 1. 모집 목록 보기
@@ -36,39 +37,45 @@ def recruit_detail(request, recruit_id):
 @login_required
 def recruit_create(request):
     if request.method == 'POST':
-        title = request.POST.get('title')
-        content = request.POST.get('content')
-        field = request.POST.get('field')
-        headcount = request.POST.get('headcount', 1)
-        deadline = request.POST.get('deadline')
+        # POST 값을 그대로 create() 에 넣으면 빈 날짜·빈 인원수에서 ValueError 로 500 이 납니다.
+        # RecruitForm 이 형식과 범위를 먼저 확인합니다.
+        form = RecruitForm(request.POST)
 
-        recruit = Recruit.objects.create(
-            writer=request.user,
-            title=title,
-            content=content,
-            field=field,
-            headcount=headcount,
-            deadline=deadline,
-        )
-        return redirect('recruit_detail', recruit_id=recruit.recruit_id)
-        
-    return render(request, 'recruit/recruit_form.html')
+        if form.is_valid():
+            recruit = form.save(commit=False)
+            recruit.writer = request.user
+            recruit.save()
+            return redirect('recruit_detail', recruit_id=recruit.recruit_id)
+    else:
+        form = RecruitForm()
+
+    return render(request, 'recruit/recruit_form.html', {'form': form})
 
 # 4. 지원하기 (Notification 알림 연동)
 @login_required
 def recruit_apply(request, recruit_id):
     recruit = get_object_or_404(Recruit, pk=recruit_id, is_deleted=False)
-    
-    if recruit.is_closed or recruit.deadline < timezone.now().date():
+
+    # 화면에서는 작성자에게 지원 폼을 감추지만, 주소로 직접 들어오면 그대로 통과합니다.
+    if request.user == recruit.writer:
+        messages.error(request, "내가 올린 모집에는 지원할 수 없습니다.")
+        return redirect('recruit_detail', recruit_id=recruit_id)
+
+    if not recruit.is_recruiting:
         messages.error(request, "이미 마감된 모집입니다.")
         return redirect('recruit_detail', recruit_id=recruit_id)
-        
+
     if request.method == 'POST':
-        message_text = request.POST.get('message', '')
+        form = RecruitApplicationForm(request.POST)
+
+        if not form.is_valid():
+            messages.error(request, "지원 메시지를 다시 확인해 주세요.")
+            return redirect('recruit_detail', recruit_id=recruit_id)
+
         app, created = RecruitApplication.objects.get_or_create(
             recruit=recruit,
             applicant=request.user,
-            defaults={'message': message_text}
+            defaults={'message': form.cleaned_data['message']}
         )
         if created:
             # 모집 작성자에게 알림 발송
@@ -100,6 +107,19 @@ def recruit_application_decide(request, app_id, status):
     }
 
     target_status = valid_statuses.get(status)
+
+    # 모집 인원보다 많이 승인되지 않게 막습니다.
+    # 이미 승인된 지원을 다시 승인하는 경우는 인원이 늘지 않으므로 통과시킵니다.
+    if (
+        target_status == RecruitApplication.Status.APPROVED
+        and application.status != RecruitApplication.Status.APPROVED
+        and application.recruit.is_full
+    ):
+        messages.error(
+            request,
+            f"모집 인원({application.recruit.headcount}명)을 이미 다 채웠습니다.",
+        )
+        return redirect('recruit_detail', recruit_id=application.recruit.recruit_id)
 
     if target_status:
         application.status = target_status

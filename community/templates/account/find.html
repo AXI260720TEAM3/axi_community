@@ -13,11 +13,7 @@
 
 {% block content %}
 <!-- 결과 알림 메시지 (성공/실패 alert) -->
-{% if messages %}
-  {% for message in messages %}
-    <script>alert("{{ message }}");</script>
-  {% endfor %}
-{% endif %}
+{% comment %} 안내 문구는 base_gate.html 이 한 번만 출력합니다. alert 까지 띄우면 같은 글이 두 번 보입니다. {% endcomment %}
 
 <!-- 1. 아이디 찾기 폼 -->
 <form method="post" action="{% url 'find_account' %}">

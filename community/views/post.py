@@ -245,8 +245,8 @@ def post_delete(request, post_id):
         return redirect("post_detail", post_id=post.post_id)
 
     if request.method == "POST":
-        post.is_deleted = True
-        post.save()
+        # Q&A 질문이 이 경로로 들어와도 답변이 따로 남지 않게 soft_delete 를 씁니다
+        post.soft_delete()
         return redirect("board_list", board_id=post.board_id)
     
     return redirect("post_detail", post_id=post.post_id)

@@ -109,8 +109,8 @@ def qna_detail(request, post_id):
         action = request.POST.get("action", "").strip()
 
         if action == "delete":
-            question.is_deleted = True
-            question.save(update_fields=["is_deleted"])
+            # 질문에 달린 답변도 같이 지웁니다. Post.soft_delete 참고
+            question.soft_delete()
 
             messages.success(
                 request,
@@ -587,10 +587,7 @@ def qna_delete_answer(request, post_id, answer_id):
             post_id=question.post_id,
         )
 
-    answer.is_deleted = True
-    answer.save(
-        update_fields=["is_deleted"]
-    )
+    answer.soft_delete()
 
     messages.success(
         request,

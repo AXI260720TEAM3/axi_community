@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from ..forms import RecruitApplicationForm, RecruitForm
@@ -111,6 +112,7 @@ def recruit_apply(request, recruit_id):
                 receiver=recruit.writer,
                 kind=Notification.Kind.RECRUIT,
                 message=f"'{recruit.title}' 모집에 새로운 지원자가 있습니다.",
+                link=reverse('recruit_detail', args=[recruit.recruit_id]),
                 actor=request.user
             )
             messages.success(request, "지원서가 제출되었습니다.")
@@ -167,6 +169,7 @@ def recruit_application_decide(request, app_id, status):
             receiver=application.applicant,
             kind=Notification.Kind.RECRUIT,
             message=msg,
+            link=reverse('recruit_detail', args=[application.recruit.recruit_id]),
             actor=request.user
         )
         messages.success(request, f"지원 상태가 '{target_status}'(으)로 변경되었습니다.")

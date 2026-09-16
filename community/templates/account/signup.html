@@ -9,6 +9,21 @@
 <form id="signup-form" method="post" action="{% url 'signup' %}">
   {% csrf_token %}
 
+  {% comment %}
+    서버가 돌려준 오류. 아이디 중복이나 이메일 형식처럼 브라우저에서 못 잡는 것들이
+    여기로 옵니다. 이게 없으면 "다시 확인해 주세요" 만 뜨고 어디가 틀렸는지 알 수 없습니다.
+  {% endcomment %}
+  {% if form.errors %}
+    <div class="gate-msg" style="color:#e53e3e; border-color:#e53e3e;">
+      {% for field in form %}
+        {% for message in field.errors %}
+          <div>{{ field.label }} — {{ message }}</div>
+        {% endfor %}
+      {% endfor %}
+      {% for message in form.non_field_errors %}<div>{{ message }}</div>{% endfor %}
+    </div>
+  {% endif %}
+
   <!-- 아이디 (중복확인 버튼 추가) -->
   <div class="field" id="field-username">
     <label for="su-id">아이디</label>

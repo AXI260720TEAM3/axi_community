@@ -4,11 +4,7 @@
 {% block wordmark %}회원가입<span>기회를 IT-DA를 함께 씁니다</span>{% endblock %}
 
 {% block content %}
-{% if messages %}
-  {% for message in messages %}
-    <script>alert("{{ message }}");</script>
-  {% endfor %}
-{% endif %}
+{% comment %} 안내 문구는 base_gate.html 이 한 번만 출력합니다. alert 까지 띄우면 같은 글이 두 번 보입니다. {% endcomment %}
 
 <form id="signup-form" method="post" action="{% url 'signup' %}">
   {% csrf_token %}

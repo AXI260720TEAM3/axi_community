@@ -14,7 +14,7 @@ URL 설계 — 팀장이 관리합니다.
 from django.urls import path
 
 from .views import (
-    account, board, comment, message, mypage, notification, post, qna, recruit,
+    account, board, comment, jobs, message, mypage, notification, post, qna, recruit
 )
 
 urlpatterns = [
@@ -80,4 +80,7 @@ urlpatterns = [
     path("notifications/<int:notification_id>/read/", notification.notification_read, name="notification_read"),
     path("notifications/read-all/", notification.notification_read_all, name="notification_read_all"),
     path("notifications/<int:notification_id>/delete/", notification.notification_delete, name="notification_delete"),
+
+    # ------------------------------------------------------------ [신규] 채용공고
+    path("jobs/recommend/", jobs.job_recommendations, name="job_recommendations"),
 ]

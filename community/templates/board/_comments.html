@@ -6,44 +6,60 @@
     border-left: 2px solid #e5e7eb;
   }
 
-  .reply-form {
+  .reply-form, .edit-form {
     display: none;
-    margin: 10px 0 10px 40px;
+    margin: 10px 0;
   }
 
-  .reply-form.open {
+  .reply-form.open, .edit-form.open {
     display: block;
   }
 
   .comment-delete {
-  border: 0;
-  background: transparent;
-  padding: 0 3px;
-  margin-left: 4px;
-  font-size: 18px;
-  line-height: 1;
-  color: #888;
-  cursor: pointer;
-}
+    border: 0;
+    background: transparent;
+    padding: 0 3px;
+    margin-left: 4px;
+    font-size: 18px;
+    line-height: 1;
+    color: #888;
+    cursor: pointer;
+  }
 
-.comment-delete:hover {
-  color: #222;
-}
+  .comment-delete:hover {
+    color: #222;
+  }
 
-.reply-toggle {
-  border: 0;
-  border-radius: 5px;
-  background: #356f60;
-  color: white;
-  padding: 4px 8px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
+  /* 수정 버튼/취소 버튼 스타일 */
+  .comment-edit-btn {
+    border: 0;
+    background: transparent;
+    padding: 0 3px;
+    margin-left: 4px;
+    font-size: 12px;
+    color: #666;
+    cursor: pointer;
+    text-decoration: underline;
+  }
 
-.reply-toggle:hover {
-  opacity: 0.9;
-}
+  .comment-edit-btn:hover {
+    color: #111;
+  }
+
+  .reply-toggle {
+    border: 0;
+    border-radius: 5px;
+    background: #356f60;
+    color: white;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .reply-toggle:hover {
+    opacity: 0.9;
+  }
 </style>
 
 <div class="panel">
@@ -54,11 +70,6 @@
 
       <div class="cmt">
         <div class="cmt-top">
-          {% comment %}
-            익명 게시판에서는 글쓴이가 자기 글에 단 댓글로 신원이 드러납니다.
-            이름·유형 배지·쪽지 링크(아이디가 들어갑니다)를 모두 가려야 익명이 유지됩니다.
-            다른 사람의 댓글은 원래대로 이름을 보여줍니다.
-          {% endcomment %}
           {% if post.board.is_anonymous and c.writer_id == post.writer_id %}
             <b>글쓴이 (익명)</b>
           {% elif user.is_authenticated and c.writer_id != user.member_id %}
@@ -78,20 +89,43 @@
           <time>{{ c.created_at|date:"n월 j일 H:i" }}</time>
 
           {% if c.writer_id == user.member_id %}
+            <!-- [추가] 댓글 수정 버튼 -->
+            <button type="button" 
+                    class="comment-edit-btn edit-toggle" 
+                    data-target="edit-{{ c.comment_id }}">수정</button>
+
             <form method="post"
                   action="{% url 'comment_delete' c.comment_id %}"
                   style="display:inline;">
               {% csrf_token %}
               <button type="submit"
-               class="comment-delete"
-                aria-label="댓글 삭제"
-                title="삭제"
-                  >×</button>
+                      class="comment-delete"
+                      aria-label="댓글 삭제"
+                      title="삭제">×</button>
             </form>
           {% endif %}
         </div>
 
-        <p>{{ c.content|linebreaksbr }}</p>
+        <p id="cmt-text-{{ c.comment_id }}">{{ c.content|linebreaksbr }}</p>
+
+        <!-- [추가] 댓글 수정 폼 -->
+        {% if c.writer_id == user.member_id %}
+          <form id="edit-{{ c.comment_id }}"
+                class="edit-form"
+                method="post"
+                action="{% url 'comment_update' c.comment_id %}">
+            {% csrf_token %}
+            <textarea name="content"
+                      rows="2"
+                      maxlength="1000">{{ c.content }}</textarea>
+            <div style="margin-top: 5px;">
+              <button class="btn sm" type="submit">수정 완료</button>
+              <button class="btn sm edit-cancel" 
+                      type="button" 
+                      data-target="edit-{{ c.comment_id }}">취소</button>
+            </div>
+          </form>
+        {% endif %}
 
         {% if user.is_authenticated and c.writer_id != user.member_id %}
           <button type="button"
@@ -116,20 +150,43 @@
               <time>{{ reply.created_at|date:"n월 j일 H:i" }}</time>
 
               {% if reply.writer_id == user.member_id %}
+                <!-- [추가] 대댓글 수정 버튼 -->
+                <button type="button" 
+                        class="comment-edit-btn edit-toggle" 
+                        data-target="edit-{{ reply.comment_id }}">수정</button>
+
                 <form method="post"
                       action="{% url 'comment_delete' reply.comment_id %}"
                       style="display:inline;">
                   {% csrf_token %}
                   <button type="submit"
-                  class="comment-delete"
-                  aria-label="대댓글 삭제"
-                    title="삭제"
-                    >×</button>
+                          class="comment-delete"
+                          aria-label="대댓글 삭제"
+                          title="삭제">×</button>
                 </form>
               {% endif %}
             </div>
 
-            <p>{{ reply.content|linebreaksbr }}</p>
+            <p id="cmt-text-{{ reply.comment_id }}">{{ reply.content|linebreaksbr }}</p>
+
+            <!-- [추가] 대댓글 수정 폼 -->
+            {% if reply.writer_id == user.member_id %}
+              <form id="edit-{{ reply.comment_id }}"
+                    class="edit-form"
+                    method="post"
+                    action="{% url 'comment_update' reply.comment_id %}">
+                {% csrf_token %}
+                <textarea name="content"
+                          rows="2"
+                          maxlength="1000">{{ reply.content }}</textarea>
+                <div style="margin-top: 5px;">
+                  <button class="btn sm" type="submit">수정 완료</button>
+                  <button class="btn sm edit-cancel" 
+                          type="button" 
+                          data-target="edit-{{ reply.comment_id }}">취소</button>
+                </div>
+              </form>
+            {% endif %}
           </div>
         {% endif %}
       {% endfor %}
@@ -185,11 +242,28 @@
 
 
 <script>
+// 답글 입력창 토글
 document.querySelectorAll(".reply-toggle").forEach(btn => {
   btn.addEventListener("click", () => {
     document
       .getElementById(btn.dataset.target)
       .classList.toggle("open");
+  });
+});
+
+// [추가] 댓글 수정창 토글 (수정 버튼 클릭 시)
+document.querySelectorAll(".edit-toggle").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const targetForm = document.getElementById(btn.dataset.target);
+    targetForm.classList.toggle("open");
+  });
+});
+
+// [추가] 수정 취소 버튼 클릭 시 폼 닫기
+document.querySelectorAll(".edit-cancel").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const targetForm = document.getElementById(btn.dataset.target);
+    targetForm.classList.remove("open");
   });
 });
 </script>

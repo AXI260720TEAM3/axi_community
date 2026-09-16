@@ -58,6 +58,7 @@ urlpatterns = [
     # ---------------------------------------------------------------- [C] 댓글
     path("posts/<int:post_id>/comments/", comment.comment_create, name="comment_create"),
     path("comments/<int:comment_id>/delete/", comment.comment_delete, name="comment_delete"),
+    path("comments/<int:comment_id>/update/", comment.comment_update, name="comment_update"),
 
     # ---------------------------------------------------------------- [C] Q&A
     path("qna/", qna.qna_list, name="qna_list"),

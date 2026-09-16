@@ -93,3 +93,21 @@ def comment_delete(request, comment_id):
         comment.save(update_fields=["is_deleted"])
 
     return redirect("post_detail", post_id=post_id)
+
+@login_required
+def comment_update(request, comment_id):
+    comment = get_object_or_404(
+        PostComment,
+        comment_id=comment_id,
+        is_deleted=False,
+    )
+
+    # 작성자 본인만 수정 가능
+    if is_owner(request.user, comment):
+        if request.method == "POST":
+            content = request.POST.get("content", "").strip()
+            if content:
+                comment.content = content
+                comment.save(update_fields=["content"])
+
+    return redirect("post_detail", post_id=comment.post_id)

@@ -8,7 +8,7 @@ from django.views.decorators.http import require_POST
 
 from ..models import Attachment, Board, BoardPermission, Notification, Post
 from ..permissions import can_write
-from .post import attachment_error, count_view
+from .post import attachment_error, count_view, delete_attachments
 
 
 PAGE_SIZE = 10
@@ -109,8 +109,8 @@ def qna_detail(request, post_id):
         action = request.POST.get("action", "").strip()
 
         if action == "delete":
-            question.is_deleted = True
-            question.save(update_fields=["is_deleted"])
+            # 질문에 달린 답변도 같이 지웁니다. Post.soft_delete 참고
+            question.soft_delete()
 
             messages.success(
                 request,
@@ -198,13 +198,8 @@ def qna_edit(request, post_id):
             update_fields=["title", "content"]
         )
 
-        delete_files = request.POST.getlist("delete_files")
-
-        if delete_files:
-            Attachment.objects.filter(
-                post=question,
-                attachment_id__in=delete_files,
-            ).delete()
+        # DB 행만 지우면 디스크에 파일이 남습니다. 공통 함수가 둘 다 지웁니다
+        delete_attachments(question, request.POST.getlist("delete_files"))
 
         for f in files:
             Attachment.objects.create(
@@ -388,6 +383,13 @@ def qna_answer(request, post_id):
                 actor=request.user,
             )
 
+        else:
+            # 그냥 돌려보내면 쓰던 답변이 사라진 채 아무 안내도 없습니다
+            messages.error(
+                request,
+                "답변 제목과 내용을 모두 입력해주세요.",
+            )
+
         return redirect(
             "qna_detail",
             post_id=question.post_id,
@@ -524,13 +526,7 @@ def qna_edit_answer(request, post_id, answer_id):
             update_fields=["title", "content"]
         )
 
-        delete_files = request.POST.getlist("delete_files")
-
-        if delete_files:
-            Attachment.objects.filter(
-                post=answer,
-                attachment_id__in=delete_files,
-            ).delete()
+        delete_attachments(answer, request.POST.getlist("delete_files"))
 
         for f in files:
             Attachment.objects.create(
@@ -587,10 +583,7 @@ def qna_delete_answer(request, post_id, answer_id):
             post_id=question.post_id,
         )
 
-    answer.is_deleted = True
-    answer.save(
-        update_fields=["is_deleted"]
-    )
+    answer.soft_delete()
 
     messages.success(
         request,

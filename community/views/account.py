@@ -10,6 +10,7 @@ from django.core.cache import cache
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.http import require_POST
 
 from community.forms import SignupForm
 
@@ -73,8 +74,13 @@ def login_view(request):
     return render(request, 'account/login.html', {'next': next_url})
 
 
+@require_POST
 def logout_view(request):
-    """로그아웃 처리"""
+    """로그아웃 처리.
+
+    반드시 POST 로만 받습니다. 링크(GET)로 두면 브라우저 미리읽기나
+    <img src="/accounts/logout/"> 같은 태그만으로도 로그아웃됩니다.
+    """
     logout(request)
     return redirect('home')
 

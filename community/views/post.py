@@ -111,6 +111,20 @@ ALLOWED_EXTENSIONS = {
 }
 
 
+def delete_attachments(post, attachment_ids):
+    """글에 딸린 첨부 중 고른 것을 지웁니다. DB 행과 디스크 파일을 함께 지웁니다.
+
+    DB 행만 지우면 media 폴더에 파일이 계속 쌓입니다. 아무도 못 받는데 용량만 먹습니다.
+    반드시 이 글의 첨부 중에서만 찾습니다. 남의 글 첨부 번호를 넣어도 지워지지 않게요.
+    """
+    if not attachment_ids:
+        return
+
+    for a in post.attachments.filter(pk__in=attachment_ids):
+        a.stored_path.delete(save=False)   # 디스크의 실제 파일
+        a.delete()                         # DB 의 행
+
+
 def attachment_error(files):
     """첨부가 규칙에 맞는지 봅니다. 문제가 있으면 사용자에게 보여줄 문구를, 없으면 None 을 돌려줍니다."""
     for f in files:
@@ -213,10 +227,7 @@ def post_update(request, post_id):
         post.save()
 
         # 체크한 기존 첨부 삭제 — 반드시 이 글의 첨부 중에서만 찾습니다
-        delete_ids = request.POST.getlist("delete_files")
-        for a in post.attachments.filter(pk__in=delete_ids):
-            a.stored_path.delete(save=False)   # 디스크의 실제 파일
-            a.delete()                         # DB 의 행
+        delete_attachments(post, request.POST.getlist("delete_files"))
 
         # 새로 추가한 첨부 저장 — 글쓰기와 같은 코드
         for f in files:
@@ -245,8 +256,8 @@ def post_delete(request, post_id):
         return redirect("post_detail", post_id=post.post_id)
 
     if request.method == "POST":
-        post.is_deleted = True
-        post.save()
+        # Q&A 질문이 이 경로로 들어와도 답변이 따로 남지 않게 soft_delete 를 씁니다
+        post.soft_delete()
         return redirect("board_list", board_id=post.board_id)
     
     return redirect("post_detail", post_id=post.post_id)

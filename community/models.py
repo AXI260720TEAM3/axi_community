@@ -308,6 +308,20 @@ class Post(models.Model):
         """이 글이 Q&A 답변인지"""
         return self.parent_id is not None
 
+    def soft_delete(self):
+        """글을 지움 표시합니다. Q&A 질문이면 달린 답변도 함께 지웁니다.
+
+        답변만 남겨두면 질문 화면이 404 라서 화면으로는 아무도 볼 수 없는데,
+        답변에 달린 첨부파일은 주소로 계속 받아지고 '내가 쓴 글' 목록에도 남습니다.
+
+        글을 지우는 곳은 모두 이 메서드를 쓰세요. 화면마다 따로 지우면 규칙이 갈라집니다.
+        """
+        self.is_deleted = True
+        self.save(update_fields=["is_deleted"])
+
+        if self.parent_id is None:
+            self.answers.filter(is_deleted=False).update(is_deleted=True)
+
 
 class PostComment(models.Model):
     """
@@ -374,8 +388,24 @@ class Attachment(models.Model):
 
 # ================================================================ 쪽지
 
+class MessageQuerySet(models.QuerySet):
+    def unread_for(self, user):
+        """user 가 아직 읽지 않은 쪽지.
+
+        내 쪽지함에서 지운 쪽지는 빼야 합니다. 화면마다 조건을 따로 적으면
+        사이드바 배지와 마이페이지 숫자가 서로 달라집니다.
+        """
+        return self.filter(
+            receiver=user,
+            read_at__isnull=True,
+            receiver_deleted=False,
+        )
+
+
 class Message(models.Model):
     """회원 사이의 1:1 쪽지. read_at 이 비어 있으면 아직 읽지 않은 쪽지입니다."""
+
+    objects = MessageQuerySet.as_manager()
 
     message_id = models.AutoField(primary_key=True)
     sender = models.ForeignKey(

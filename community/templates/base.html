@@ -33,6 +33,9 @@
     <a class="navlink" href="{% url 'recruit_list' %}"
        {% if nav_current == 'recruit' %}aria-current="true"{% endif %}>프로젝트 팀원 모집</a>
 
+    <a class="navlink" href="{% url 'job_recommendations' %}"
+      {% if nav_current == 'jobs' %}aria-current="true"{% endif %}>맞춤 채용공고</a>
+
     <h4>내 활동</h4>
     <a class="navlink" href="{% url 'notification_list' %}"
        {% if nav_current == 'notification' %}aria-current="true"{% endif %}>

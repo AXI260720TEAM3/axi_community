@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}채용공고 추천 · 기회를 IT-DA{% endblock %}
+
+{% block content %}
+<!-- 상단 헤더 영역 (list.html 및 home.html 양식 반영) -->
+<div class="head">
+  <div>
+    <div class="crumb">취업 정보</div>
+    <h1>맞춤 채용공고 추천</h1>
+  </div>
+</div>
+
+<!-- 검색 필터 영역 (list.html의 filters, search 클래스 적용) -->
+<form class="filters" method="get">
+  <div class="search" style="width: 100%;">
+    <input name="q" value="{{ keyword }}"
+           placeholder="기술 스택이나 직무를 입력하세요 (예: Python, React, 백엔드)"
+           aria-label="채용공고 검색">
+    <button type="submit">검색</button>
+  </div>
+</form>
+
+<!-- 채용공고 카드 그리드 리스트 (home.html의 cards 및 panel 구조 활용) -->
+<div class="two cards" style="margin-top: 18px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
+  {% for job in jobs %}
+    <div class="panel" style="margin-top: 0; display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        <!-- 카드 상단: 회사명 및 출처 표시 -->
+        <div class="cmt-top" style="margin-bottom: 8px;">
+          <b style="color: var(--primary, #356f60);">{{ job.company }}</b>
+          <span class="tag">사람인</span>
+        </div>
+
+        <!-- 공고 제목 -->
+        <div style="font-size: 16px; font-weight: bold; margin-bottom: 12px; line-height: 1.4;">
+          <a href="{{ job.url }}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: inherit;">
+            {{ job.title }}
+          </a>
+        </div>
+
+        <!-- 메타 정보 (상세 정보) -->
+        <p class="lede" style="font-size: 13px; line-height: 1.6; margin: 0;">
+          {% if job.location %}
+            📍 {{ job.location }}<br>
+          {% endif %}
+          🎓 {{ job.experience|default:"경력무관" }} · {{ job.job_type }}
+        </p>
+      </div>
+
+      <!-- 카드 하단 버튼 및 마감일 영역 -->
+      <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line, #e5e7eb); display: flex; justify-content: space-between; align-items: center;">
+        <time style="font-size: 12px; color: var(--muted, #888);">
+          {% if job.expiration_date %}{{ job.expiration_date }}{% else %}상시채용{% endif %}
+        </time>
+        <a href="{{ job.url }}" target="_blank" rel="noopener noreferrer" class="btn sm" style="text-decoration: none;">
+          공고 보기 ↗
+        </a>
+      </div>
+    </div>
+  {% empty %}
+    <!-- 검색 결과가 없을 때 (list.html 및 home.html의 empty 디자인 응용) -->
+    <div class="panel" style="grid-column: 1 / -1; margin-top: 0;">
+      <div class="cmt gone" style="text-align: center; padding: 48px 0;">
+        <p>
+          {% if keyword %}
+            '<b>{{ keyword }}</b>'에 대한 추천 채용공고가 없습니다. 다른 검색어로 시도해 보세요.
+          {% else %}
+            검색어를 입력하여 관련 채용공고를 확인해 보세요.
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

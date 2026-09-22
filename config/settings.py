@@ -35,7 +35,7 @@ ALLOWED_HOSTS = ['itda.taila66801.ts.net', 'localhost', '127.0.0.1']
 
 # 터널 주소에서 들어온 폼 제출을 신뢰하겠다는 뜻입니다.
 # 이게 없으면 로그인·글쓰기가 전부 403 으로 막힙니다. https:// 를 꼭 붙이세요.
-CSRF_TRUSTED_ORIGINS = ['https://itda.taila66801.ts.net']
+CSRF_TRUSTED_ORIGINS = ['https://*.taila66801.ts.net']
 
 # 바깥 https 는 터널이 처리하고 Django 에는 http 로 들어옵니다. 그 사실을 알려줍니다.
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

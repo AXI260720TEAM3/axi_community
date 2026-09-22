@@ -31,7 +31,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # 'false' / 'FALSE' 처럼 적어도 되게 대소문자와 앞뒤 공백은 무시합니다.
 DEBUG = os.getenv('DEBUG', 'True').strip().lower() == 'true'
 
-ALLOWED_HOSTS = ['itda.taila66801.ts.net', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['.taila66801.ts.net', 'localhost', '127.0.0.1']
 
 # 터널 주소에서 들어온 폼 제출을 신뢰하겠다는 뜻입니다.
 # 이게 없으면 로그인·글쓰기가 전부 403 으로 막힙니다. https:// 를 꼭 붙이세요.
